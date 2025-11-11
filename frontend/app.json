@@ -1,0 +1,61 @@
+{
+  "expo": {
+    "name": "BiteCheck",
+    "slug": "bitecheck",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.bitecheck.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "BiteCheck needs access to your camera to scan barcodes and QR codes on products."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.bitecheck.app",
+      "permissions": [
+        "CAMERA"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow BiteCheck to access your camera to scan product barcodes."
+        }
+      ],
+      [
+        "expo-barcode-scanner",
+        {
+          "barCodeTypes": [
+            "qr",
+            "ean13",
+            "ean8",
+            "upc",
+            "code128",
+            "code39"
+          ]
+        }
+      ]
+    ],
+    "scheme": "bitecheck"
+  }
+}
+
