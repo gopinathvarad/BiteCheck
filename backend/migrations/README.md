@@ -16,7 +16,7 @@ This directory contains SQL migration files for setting up the BiteCheck databas
 
 ### Option 1: Using Supabase Dashboard (Recommended)
 
-1. Go to your Supabase project dashboard: https://avdnwcsuekjzrqjvazpo.supabase.co
+1. Go to your Supabase project dashboard in the **GopinathVarad** organization, project **BiteCheck**
 2. Navigate to **SQL Editor**
 3. Copy and paste the contents of each migration file in order (001, 002, 003, etc.)
 4. Run each migration one at a time
@@ -30,8 +30,8 @@ If you have the Supabase CLI installed:
 # Initialize Supabase (if not already done)
 supabase init
 
-# Link to your project
-supabase link --project-ref avdnwcsuekjzrqjvazpo
+# Link to your project (replace YOUR_PROJECT_REF with your actual project reference)
+supabase link --project-ref YOUR_PROJECT_REF
 
 # Apply migrations
 supabase db push
@@ -50,7 +50,8 @@ supabase db execute -f migrations/002_create_users_meta_table.sql
 If you have direct database access:
 
 ```bash
-psql "postgresql://postgres:[YOUR-PASSWORD]@db.avdnwcsuekjzrqjvazpo.supabase.co:5432/postgres" -f migrations/001_create_products_table.sql
+# Replace YOUR_PROJECT_REF with your actual project reference
+psql "postgresql://postgres:[YOUR-PASSWORD]@db.YOUR_PROJECT_REF.supabase.co:5432/postgres" -f migrations/001_create_products_table.sql
 ```
 
 ## Migration Order
@@ -94,4 +95,3 @@ DROP FUNCTION IF EXISTS update_updated_at_column() CASCADE;
 - Row Level Security (RLS) is enabled on all tables
 - Policies allow appropriate access based on user roles
 - The `update_updated_at_column()` function is shared across tables with `updated_at` columns
-
