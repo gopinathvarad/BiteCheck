@@ -13,6 +13,7 @@ export default function TabsLayout() {
         name="index"
         options={{
           title: 'Scan',
+          headerShown: false,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="camera" size={size} color={color} />
           ),
