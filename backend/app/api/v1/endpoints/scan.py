@@ -3,11 +3,13 @@
 from fastapi import APIRouter, HTTPException
 from app.features.scan.models import ScanRequest
 from app.features.scan.service import ScanService
+from app.shared.models.response import APIResponse
+from app.entities.product.models import Product
 
 router = APIRouter()
 
 
-@router.post("")
+@router.post("", response_model=APIResponse[Product])
 async def scan_product(request: ScanRequest):
     """
     Scan a product by barcode or QR code
@@ -30,7 +32,11 @@ async def scan_product(request: ScanRequest):
                 detail="Product not found"
             )
         
-        return product
+        return APIResponse(
+            success=True,
+            data=product,
+            message="Product scanned successfully"
+        )
     except HTTPException:
         raise
     except Exception as e:

@@ -10,6 +10,8 @@ import {
   Modal,
   ScrollView,
   Dimensions,
+  Platform,
+  TextInput,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { CameraView, CameraType, useCameraPermissions, BarcodeScanningResult } from 'expo-camera';
@@ -29,16 +31,18 @@ export default function ScanScreen() {
   const [cameraType, setCameraType] = useState<CameraType>('back');
   const [scanning, setScanning] = useState(false);
   const [showProductModal, setShowProductModal] = useState(false);
+  const [showManualEntryModal, setShowManualEntryModal] = useState(false);
+  const [manualBarcode, setManualBarcode] = useState('');
   const [product, setProduct] = useState<Product | null>(null);
   const cameraRef = useRef<CameraView>(null);
   const scanLineAnim = useRef(new Animated.Value(0)).current;
 
   // Scan mutation
   const scanMutation = useMutation({
-    mutationFn: async (code: string) => {
+    mutationFn: async ({ code, type }: { code: string; type?: string }) => {
       const response = await scanProduct({
         code,
-        type: 'barcode',
+        type: (type as 'barcode' | 'qr') || 'barcode',
       });
       return response.data;
     },
@@ -95,32 +99,55 @@ export default function ScanScreen() {
     setScanned(true);
     setScanning(true);
     
-    // Process the scan
-    scanMutation.mutate(data);
+    // Process the scan with barcode type
+    scanMutation.mutate({ code: data, type });
   };
 
   const handleManualEntry = () => {
-    Alert.prompt(
-      'Enter Barcode',
-      'Type the barcode number manually',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-          onPress: () => {},
-        },
-        {
-          text: 'Scan',
-          onPress: (barcode) => {
-            if (barcode && barcode.trim()) {
-              setScanning(true);
-              scanMutation.mutate(barcode.trim());
-            }
+    if (Platform.OS === 'ios') {
+      // iOS: Use native Alert.prompt for better UX
+      Alert.prompt(
+        'Enter Barcode',
+        'Type the barcode number manually',
+        [
+          {
+            text: 'Cancel',
+            style: 'cancel',
+            onPress: () => {},
           },
-        },
-      ],
-      'plain-text'
-    );
+          {
+            text: 'Scan',
+            onPress: (barcode) => {
+              if (barcode && barcode.trim()) {
+                setScanned(true);
+                setScanning(true);
+                scanMutation.mutate({ code: barcode.trim() });
+              }
+            },
+          },
+        ],
+        'plain-text'
+      );
+    } else {
+      // Android: Show custom modal with TextInput
+      setShowManualEntryModal(true);
+      setManualBarcode('');
+    }
+  };
+
+  const handleManualScan = () => {
+    if (manualBarcode && manualBarcode.trim()) {
+      setScanned(true);
+      setScanning(true);
+      setShowManualEntryModal(false);
+      scanMutation.mutate({ code: manualBarcode.trim() });
+      setManualBarcode('');
+    }
+  };
+
+  const handleManualEntryCancel = () => {
+    setShowManualEntryModal(false);
+    setManualBarcode('');
   };
 
   const handleGalleryPress = () => {
@@ -392,8 +419,12 @@ export default function ScanScreen() {
                 <TouchableOpacity
                   style={styles.actionButton}
                   onPress={() => {
-                    // TODO: Navigate to full product details screen
-                    handleProductClose();
+                    if (product?.id) {
+                      handleProductClose();
+                      router.push(`/product/${product.id}`);
+                    } else {
+                      Alert.alert('Error', 'Product ID not available');
+                    }
                   }}
                 >
                   <Text style={styles.actionButtonText}>View Full Details</Text>
@@ -401,6 +432,58 @@ export default function ScanScreen() {
               </View>
             </ScrollView>
           )}
+        </View>
+      </Modal>
+
+      {/* Manual Entry Modal (Android) */}
+      <Modal
+        visible={showManualEntryModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={handleManualEntryCancel}
+      >
+        <View style={styles.manualEntryModalContainer}>
+          <View style={styles.manualEntryModalHeader}>
+            <Text style={styles.manualEntryModalTitle}>Enter Barcode</Text>
+            <TouchableOpacity onPress={handleManualEntryCancel}>
+              <Ionicons name="close" size={28} color="#000" />
+            </TouchableOpacity>
+          </View>
+          <View style={styles.manualEntryModalContent}>
+            <Text style={styles.manualEntryModalLabel}>
+              Type the barcode number manually
+            </Text>
+            <TextInput
+              style={styles.manualEntryInput}
+              value={manualBarcode}
+              onChangeText={setManualBarcode}
+              placeholder="Enter barcode (EAN, UPC, etc.)"
+              placeholderTextColor="#999"
+              autoFocus
+              keyboardType="numeric"
+              returnKeyType="done"
+              onSubmitEditing={handleManualScan}
+            />
+            <View style={styles.manualEntryModalActions}>
+              <TouchableOpacity
+                style={[styles.manualEntryButton, styles.manualEntryButtonCancel]}
+                onPress={handleManualEntryCancel}
+              >
+                <Text style={styles.manualEntryButtonCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.manualEntryButton,
+                  styles.manualEntryButtonScan,
+                  (!manualBarcode || !manualBarcode.trim()) && styles.manualEntryButtonDisabled,
+                ]}
+                onPress={handleManualScan}
+                disabled={!manualBarcode || !manualBarcode.trim()}
+              >
+                <Text style={styles.manualEntryButtonScanText}>Scan</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
       </Modal>
     </View>
@@ -690,6 +773,72 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   actionButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  // Manual Entry Modal Styles
+  manualEntryModalContainer: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  manualEntryModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+  },
+  manualEntryModalTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#000',
+  },
+  manualEntryModalContent: {
+    flex: 1,
+    padding: 20,
+  },
+  manualEntryModalLabel: {
+    fontSize: 16,
+    color: '#666',
+    marginBottom: 16,
+  },
+  manualEntryInput: {
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    borderRadius: 8,
+    padding: 16,
+    fontSize: 18,
+    backgroundColor: '#f9fafb',
+    marginBottom: 24,
+  },
+  manualEntryModalActions: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  manualEntryButton: {
+    flex: 1,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  manualEntryButtonCancel: {
+    backgroundColor: '#f5f5f5',
+  },
+  manualEntryButtonScan: {
+    backgroundColor: '#6B46C1',
+  },
+  manualEntryButtonDisabled: {
+    opacity: 0.5,
+  },
+  manualEntryButtonCancelText: {
+    color: '#666',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  manualEntryButtonScanText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
