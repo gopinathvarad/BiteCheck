@@ -3,7 +3,7 @@
 import httpx
 from typing import Optional
 from app.core.config import settings
-from app.models.product import Product, Nutrition, NutritionFacts
+from app.entities.product.models import Product, Nutrition, NutritionFacts
 
 
 class OpenFoodFactsClient:

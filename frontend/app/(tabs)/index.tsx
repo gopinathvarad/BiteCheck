@@ -15,8 +15,9 @@ import { StatusBar } from 'expo-status-bar';
 import { CameraView, CameraType, useCameraPermissions, BarcodeScanningResult } from 'expo-camera';
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation } from '@tanstack/react-query';
-import apiClient from '../../lib/api';
-import { Product } from '../../types';
+import { useRouter } from 'expo-router';
+import { scanProduct } from '../../features/scan/api/scan-api';
+import { Product } from '../../entities/product/model/types';
 
 const { width, height } = Dimensions.get('window');
 const SCAN_AREA_SIZE = width * 0.7;
@@ -35,7 +36,7 @@ export default function ScanScreen() {
   // Scan mutation
   const scanMutation = useMutation({
     mutationFn: async (code: string) => {
-      const response = await apiClient.post('/scan', {
+      const response = await scanProduct({
         code,
         type: 'barcode',
       });

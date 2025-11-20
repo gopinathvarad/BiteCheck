@@ -1,4 +1,4 @@
-"""User service for user preferences and profile management"""
+"""User feature service for user preferences and profile management"""
 
 from app.core.database import get_supabase_client
 

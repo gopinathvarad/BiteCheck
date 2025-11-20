@@ -1,4 +1,4 @@
-"""Correction service for handling product corrections"""
+"""Correction feature service for handling product corrections"""
 
 from app.core.database import get_supabase_client
 

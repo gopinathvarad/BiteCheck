@@ -1,20 +1,11 @@
 """Corrections endpoints"""
 
 from fastapi import APIRouter, HTTPException, UploadFile, File
-from pydantic import BaseModel
 from typing import Optional
-from app.services.correction_service import CorrectionService
+from app.features.correction.models import CorrectionRequest
+from app.features.correction.service import CorrectionService
 
 router = APIRouter()
-
-
-class CorrectionRequest(BaseModel):
-    """Correction submission request"""
-    product_id: str
-    field_name: str
-    old_value: str
-    new_value: str
-    photo_url: Optional[str] = None
 
 
 @router.post("")

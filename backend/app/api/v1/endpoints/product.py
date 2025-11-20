@@ -1,7 +1,7 @@
 """Product endpoints"""
 
 from fastapi import APIRouter, HTTPException
-from app.services.product_service import ProductService
+from app.features.product.service import ProductService
 
 router = APIRouter()
 

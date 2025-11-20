@@ -1,18 +1,10 @@
 """Scan endpoint for barcode/QR code scanning"""
 
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
-from typing import Optional
-from app.services.product_service import ProductService
+from app.features.scan.models import ScanRequest
+from app.features.scan.service import ScanService
 
 router = APIRouter()
-
-
-class ScanRequest(BaseModel):
-    """Scan request model"""
-    code: str
-    type: Optional[str] = None
-    country: Optional[str] = None
 
 
 @router.post("")
@@ -25,8 +17,8 @@ async def scan_product(request: ScanRequest):
     - **country**: Optional country code for region-specific lookups
     """
     try:
-        product_service = ProductService()
-        product = await product_service.lookup_product(
+        scan_service = ScanService()
+        product = await scan_service.scan_product(
             code=request.code,
             code_type=request.type,
             country=request.country

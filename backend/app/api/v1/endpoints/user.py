@@ -1,18 +1,10 @@
 """User endpoints"""
 
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
-from typing import Optional, List
-from app.services.user_service import UserService
+from app.features.user.models import UserPreferencesRequest
+from app.features.user.service import UserService
 
 router = APIRouter()
-
-
-class UserPreferencesRequest(BaseModel):
-    """User preferences update request"""
-    allergies: Optional[List[str]] = None
-    diets: Optional[List[str]] = None
-    preferences: Optional[dict] = None
 
 
 @router.get("/me")

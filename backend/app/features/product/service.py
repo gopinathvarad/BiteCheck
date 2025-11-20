@@ -1,8 +1,8 @@
-"""Product service for product lookup and management"""
+"""Product feature service for product lookup and management"""
 
 from typing import Optional
 from app.core.database import get_supabase_client
-from app.models.product import Product
+from app.entities.product.models import Product
 from app.external.openfoodfacts import OpenFoodFactsClient
 
 
