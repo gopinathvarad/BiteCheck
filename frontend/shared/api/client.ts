@@ -1,5 +1,6 @@
 import axios from 'axios';
 import Constants from 'expo-constants';
+import { supabase } from '../lib/supabase';
 
 const API_URL = Constants.expoConfig?.extra?.apiUrl || 
   (typeof process !== 'undefined' && process.env?.EXPO_PUBLIC_API_URL) || 
@@ -20,10 +21,10 @@ const apiClient = axios.create({
 apiClient.interceptors.request.use(
   async (config) => {
     // Add auth token if available
-    // const token = await getAuthToken();
-    // if (token) {
-    //   config.headers.Authorization = `Bearer ${token}`;
-    // }
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.access_token) {
+      config.headers.Authorization = `Bearer ${session.access_token}`;
+    }
     return config;
   },
   (error) => {
@@ -34,10 +35,11 @@ apiClient.interceptors.request.use(
 // Response interceptor for error handling
 apiClient.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
     // Handle common errors
     if (error.response?.status === 401) {
-      // Handle unauthorized
+      // Session expired or invalid, sign out user
+      await supabase.auth.signOut();
     }
     return Promise.reject(error);
   }

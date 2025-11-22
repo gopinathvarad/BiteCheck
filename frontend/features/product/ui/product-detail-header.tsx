@@ -1,14 +1,15 @@
-import React from 'react';
-import { View, Text, StyleSheet, Image } from 'react-native';
-import { Image as ExpoImage } from 'expo-image';
-import { Product } from '../../../entities/product/model/types';
+import React from "react";
+import { View, Text, StyleSheet, Image } from "react-native";
+import { Image as ExpoImage } from "expo-image";
+import { Product } from "../../../entities/product/model/types";
 
 interface ProductDetailHeaderProps {
   product: Product;
 }
 
 export function ProductDetailHeader({ product }: ProductDetailHeaderProps) {
-  const imageUrl = product.images && product.images.length > 0 ? product.images[0] : null;
+  const imageUrl =
+    product.images && product.images.length > 0 ? product.images[0] : null;
 
   return (
     <View style={styles.container}>
@@ -30,15 +31,13 @@ export function ProductDetailHeader({ product }: ProductDetailHeaderProps) {
       {/* Product Info */}
       <View style={styles.infoContainer}>
         <Text style={styles.name}>{product.name}</Text>
-        {product.brand && (
-          <Text style={styles.brand}>{product.brand}</Text>
-        )}
-        {product.category && (
+        {!!product.brand && <Text style={styles.brand}>{product.brand}</Text>}
+        {!!product.category && (
           <View style={styles.categoryContainer}>
             <Text style={styles.category}>{product.category}</Text>
           </View>
         )}
-        {product.barcode && (
+        {!!product.barcode && (
           <Text style={styles.barcode}>Barcode: {product.barcode}</Text>
         )}
       </View>
@@ -48,40 +47,40 @@ export function ProductDetailHeader({ product }: ProductDetailHeaderProps) {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
   },
   image: {
-    width: '100%',
+    width: "100%",
     height: 300,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: "#f5f5f5",
   },
   placeholderImage: {
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   placeholderText: {
     fontSize: 16,
-    color: '#999',
+    color: "#999",
   },
   infoContainer: {
     padding: 20,
   },
   name: {
     fontSize: 28,
-    fontWeight: 'bold',
-    color: '#1a1a1a',
+    fontWeight: "bold",
+    color: "#1a1a1a",
     marginBottom: 8,
     lineHeight: 34,
   },
   brand: {
     fontSize: 18,
-    color: '#666',
+    color: "#666",
     marginBottom: 12,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   categoryContainer: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#f0f0f0',
+    alignSelf: "flex-start",
+    backgroundColor: "#f0f0f0",
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 12,
@@ -89,13 +88,12 @@ const styles = StyleSheet.create({
   },
   category: {
     fontSize: 14,
-    color: '#666',
-    fontWeight: '500',
+    color: "#666",
+    fontWeight: "500",
   },
   barcode: {
     fontSize: 14,
-    color: '#999',
-    fontFamily: 'monospace',
+    color: "#999",
+    fontFamily: "monospace",
   },
 });
-

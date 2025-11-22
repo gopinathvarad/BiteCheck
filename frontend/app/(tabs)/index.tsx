@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Animated } from 'react-native';
+import React, { useState, useEffect, useRef } from "react";
+import { Animated } from "react-native";
 import {
   View,
   Text,
@@ -12,37 +12,43 @@ import {
   Dimensions,
   Platform,
   TextInput,
-} from 'react-native';
-import { StatusBar } from 'expo-status-bar';
-import { CameraView, CameraType, useCameraPermissions, BarcodeScanningResult } from 'expo-camera';
-import { Ionicons } from '@expo/vector-icons';
-import { useMutation } from '@tanstack/react-query';
-import { useRouter } from 'expo-router';
-import { scanProduct } from '../../features/scan/api/scan-api';
-import { Product } from '../../entities/product/model/types';
+} from "react-native";
+import { StatusBar } from "expo-status-bar";
+import {
+  CameraView,
+  CameraType,
+  useCameraPermissions,
+  BarcodeScanningResult,
+} from "expo-camera";
+import { Ionicons } from "@expo/vector-icons";
+import { useMutation } from "@tanstack/react-query";
+import { useRouter } from "expo-router";
+import { scanProduct } from "../../features/scan/api/scan-api";
+import { Product } from "../../entities/product/model/types";
 
-const { width, height } = Dimensions.get('window');
+const { width, height } = Dimensions.get("window");
 const SCAN_AREA_SIZE = width * 0.7;
 
 export default function ScanScreen() {
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
   const [flashEnabled, setFlashEnabled] = useState(false);
-  const [cameraType, setCameraType] = useState<CameraType>('back');
+  const [cameraType, setCameraType] = useState<CameraType>("back");
   const [scanning, setScanning] = useState(false);
   const [showProductModal, setShowProductModal] = useState(false);
   const [showManualEntryModal, setShowManualEntryModal] = useState(false);
-  const [manualBarcode, setManualBarcode] = useState('');
+  const [manualBarcode, setManualBarcode] = useState("");
   const [product, setProduct] = useState<Product | null>(null);
   const cameraRef = useRef<CameraView>(null);
   const scanLineAnim = useRef(new Animated.Value(0)).current;
+  const router = useRouter();
 
   // Scan mutation
   const scanMutation = useMutation({
     mutationFn: async ({ code, type }: { code: string; type?: string }) => {
       const response = await scanProduct({
         code,
-        type: (type as 'barcode' | 'qr') || 'barcode',
+        type: (type as "barcode" | "qr") || "barcode",
       });
       return response.data;
     },
@@ -52,14 +58,24 @@ export default function ScanScreen() {
       setScanned(false); // Reset for next scan
     },
     onError: (error: any) => {
-      Alert.alert(
-        'Scan Failed',
-        error.response?.data?.detail || error.message || 'Failed to scan product. Please try again.',
-        [
-          { text: 'Try Again', onPress: () => setScanned(false) },
-          { text: 'Cancel', style: 'cancel' },
-        ]
-      );
+      // Safely convert error message to string
+      let errorMessage = "Failed to scan product. Please try again.";
+
+      if (error?.response?.data?.detail) {
+        const detail = error.response.data.detail;
+        errorMessage =
+          typeof detail === "string" ? detail : JSON.stringify(detail);
+      } else if (error?.message) {
+        errorMessage =
+          typeof error.message === "string"
+            ? error.message
+            : String(error.message);
+      }
+
+      Alert.alert("Scan Failed", errorMessage, [
+        { text: "Try Again", onPress: () => setScanned(false) },
+        { text: "Cancel", style: "cancel" },
+      ]);
       setScanned(false);
       setScanning(false);
     },
@@ -95,28 +111,28 @@ export default function ScanScreen() {
 
   const handleBarCodeScanned = ({ data, type }: BarcodeScanningResult) => {
     if (scanned || scanning) return;
-    
+
     setScanned(true);
     setScanning(true);
-    
+
     // Process the scan with barcode type
     scanMutation.mutate({ code: data, type });
   };
 
   const handleManualEntry = () => {
-    if (Platform.OS === 'ios') {
+    if (Platform.OS === "ios") {
       // iOS: Use native Alert.prompt for better UX
       Alert.prompt(
-        'Enter Barcode',
-        'Type the barcode number manually',
+        "Enter Barcode",
+        "Type the barcode number manually",
         [
           {
-            text: 'Cancel',
-            style: 'cancel',
+            text: "Cancel",
+            style: "cancel",
             onPress: () => {},
           },
           {
-            text: 'Scan',
+            text: "Scan",
             onPress: (barcode) => {
               if (barcode && barcode.trim()) {
                 setScanned(true);
@@ -126,12 +142,12 @@ export default function ScanScreen() {
             },
           },
         ],
-        'plain-text'
+        "plain-text"
       );
     } else {
       // Android: Show custom modal with TextInput
       setShowManualEntryModal(true);
-      setManualBarcode('');
+      setManualBarcode("");
     }
   };
 
@@ -141,18 +157,18 @@ export default function ScanScreen() {
       setScanning(true);
       setShowManualEntryModal(false);
       scanMutation.mutate({ code: manualBarcode.trim() });
-      setManualBarcode('');
+      setManualBarcode("");
     }
   };
 
   const handleManualEntryCancel = () => {
     setShowManualEntryModal(false);
-    setManualBarcode('');
+    setManualBarcode("");
   };
 
   const handleGalleryPress = () => {
     // TODO: Implement image picker for barcode scanning from gallery
-    Alert.alert('Coming Soon', 'Gallery scanning will be available soon.');
+    Alert.alert("Coming Soon", "Gallery scanning will be available soon.");
   };
 
   const handleFlashToggle = () => {
@@ -170,7 +186,9 @@ export default function ScanScreen() {
     return (
       <View style={styles.container}>
         <ActivityIndicator size="large" color="#6B46C1" />
-        <Text style={styles.permissionText}>Requesting camera permission...</Text>
+        <Text style={styles.permissionText}>
+          Requesting camera permission...
+        </Text>
         <StatusBar style="auto" />
       </View>
     );
@@ -184,7 +202,10 @@ export default function ScanScreen() {
         <Text style={styles.permissionText}>
           BiteCheck needs access to your camera to scan product barcodes.
         </Text>
-        <TouchableOpacity style={styles.permissionButton} onPress={requestPermission}>
+        <TouchableOpacity
+          style={styles.permissionButton}
+          onPress={requestPermission}
+        >
           <Text style={styles.permissionButtonText}>Grant Permission</Text>
         </TouchableOpacity>
         <StatusBar style="auto" />
@@ -195,7 +216,7 @@ export default function ScanScreen() {
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
-      
+
       {/* Camera View */}
       <CameraView
         ref={cameraRef}
@@ -203,19 +224,21 @@ export default function ScanScreen() {
         facing={cameraType}
         barcodeScannerSettings={{
           barcodeTypes: [
-            'ean13',
-            'ean8',
-            'upc_a',
-            'upc_e',
-            'qr',
-            'code128',
-            'code39',
-            'code93',
-            'codabar',
-            'itf14',
+            "ean13",
+            "ean8",
+            "upc_a",
+            "upc_e",
+            "qr",
+            "code128",
+            "code39",
+            "code93",
+            "codabar",
+            "itf14",
           ],
         }}
-        onBarcodeScanned={scanned || scanning ? undefined : handleBarCodeScanned}
+        onBarcodeScanned={
+          scanned || scanning ? undefined : handleBarCodeScanned
+        }
         enableTorch={flashEnabled}
       >
         {/* Overlay */}
@@ -224,7 +247,7 @@ export default function ScanScreen() {
           <View style={styles.topSection}>
             <Text style={styles.title}>Scan Product</Text>
             <Text style={styles.subtitle}>
-              {scanning ? 'Scanning code...' : 'Place barcode inside the frame'}
+              {scanning ? "Scanning code..." : "Place barcode inside the frame"}
             </Text>
           </View>
 
@@ -236,7 +259,7 @@ export default function ScanScreen() {
               <View style={[styles.corner, styles.topRight]} />
               <View style={[styles.corner, styles.bottomLeft]} />
               <View style={[styles.corner, styles.bottomRight]} />
-              
+
               {/* Scanning line animation */}
               {!scanned && !scanning && (
                 <Animated.View
@@ -271,7 +294,10 @@ export default function ScanScreen() {
 
             {/* Shutter Button */}
             <TouchableOpacity
-              style={[styles.shutterButton, scanning && styles.shutterButtonDisabled]}
+              style={[
+                styles.shutterButton,
+                scanning && styles.shutterButtonDisabled,
+              ]}
               onPress={() => {
                 if (!scanning) {
                   setScanned(false);
@@ -293,9 +319,9 @@ export default function ScanScreen() {
               disabled={scanning}
             >
               <Ionicons
-                name={flashEnabled ? 'flash' : 'flash-outline'}
+                name={flashEnabled ? "flash" : "flash-outline"}
                 size={28}
-                color={flashEnabled ? '#FFD700' : '#fff'}
+                color={flashEnabled ? "#FFD700" : "#fff"}
               />
             </TouchableOpacity>
           </View>
@@ -334,7 +360,9 @@ export default function ScanScreen() {
                   <Text style={styles.productBrand}>{product.brand}</Text>
                 )}
                 {product.barcode && (
-                  <Text style={styles.productBarcode}>Barcode: {product.barcode}</Text>
+                  <Text style={styles.productBarcode}>
+                    Barcode: {product.barcode}
+                  </Text>
                 )}
               </View>
 
@@ -349,7 +377,9 @@ export default function ScanScreen() {
                       ]}
                     />
                   </View>
-                  <Text style={styles.healthScoreValue}>{product.health_score}/100</Text>
+                  <Text style={styles.healthScoreValue}>
+                    {String(product.health_score)}/100
+                  </Text>
                 </View>
               )}
 
@@ -358,38 +388,44 @@ export default function ScanScreen() {
                   <Text style={styles.sectionTitle}>Nutrition (per 100g)</Text>
                   {product.nutrition.per_100g && (
                     <View style={styles.nutritionGrid}>
-                      {product.nutrition.per_100g.energy_kcal && (
-                        <View style={styles.nutritionItem}>
-                          <Text style={styles.nutritionLabel}>Calories</Text>
-                          <Text style={styles.nutritionValue}>
-                            {product.nutrition.per_100g.energy_kcal} kcal
-                          </Text>
-                        </View>
-                      )}
-                      {product.nutrition.per_100g.proteins && (
-                        <View style={styles.nutritionItem}>
-                          <Text style={styles.nutritionLabel}>Protein</Text>
-                          <Text style={styles.nutritionValue}>
-                            {product.nutrition.per_100g.proteins}g
-                          </Text>
-                        </View>
-                      )}
-                      {product.nutrition.per_100g.carbohydrates && (
-                        <View style={styles.nutritionItem}>
-                          <Text style={styles.nutritionLabel}>Carbs</Text>
-                          <Text style={styles.nutritionValue}>
-                            {product.nutrition.per_100g.carbohydrates}g
-                          </Text>
-                        </View>
-                      )}
-                      {product.nutrition.per_100g.fat && (
-                        <View style={styles.nutritionItem}>
-                          <Text style={styles.nutritionLabel}>Fat</Text>
-                          <Text style={styles.nutritionValue}>
-                            {product.nutrition.per_100g.fat}g
-                          </Text>
-                        </View>
-                      )}
+                      {product.nutrition.per_100g.energy_kcal !== undefined &&
+                        product.nutrition.per_100g.energy_kcal !== null && (
+                          <View style={styles.nutritionItem}>
+                            <Text style={styles.nutritionLabel}>Calories</Text>
+                            <Text style={styles.nutritionValue}>
+                              {String(product.nutrition.per_100g.energy_kcal)}{" "}
+                              kcal
+                            </Text>
+                          </View>
+                        )}
+                      {product.nutrition.per_100g.proteins !== undefined &&
+                        product.nutrition.per_100g.proteins !== null && (
+                          <View style={styles.nutritionItem}>
+                            <Text style={styles.nutritionLabel}>Protein</Text>
+                            <Text style={styles.nutritionValue}>
+                              {String(product.nutrition.per_100g.proteins)}g
+                            </Text>
+                          </View>
+                        )}
+                      {product.nutrition.per_100g.carbohydrates !== undefined &&
+                        product.nutrition.per_100g.carbohydrates !== null && (
+                          <View style={styles.nutritionItem}>
+                            <Text style={styles.nutritionLabel}>Carbs</Text>
+                            <Text style={styles.nutritionValue}>
+                              {String(product.nutrition.per_100g.carbohydrates)}
+                              g
+                            </Text>
+                          </View>
+                        )}
+                      {product.nutrition.per_100g.fat !== undefined &&
+                        product.nutrition.per_100g.fat !== null && (
+                          <View style={styles.nutritionItem}>
+                            <Text style={styles.nutritionLabel}>Fat</Text>
+                            <Text style={styles.nutritionValue}>
+                              {String(product.nutrition.per_100g.fat)}g
+                            </Text>
+                          </View>
+                        )}
                     </View>
                   )}
                 </View>
@@ -411,7 +447,9 @@ export default function ScanScreen() {
               {product.ingredients_raw && (
                 <View style={styles.section}>
                   <Text style={styles.sectionTitle}>Ingredients</Text>
-                  <Text style={styles.ingredientsText}>{product.ingredients_raw}</Text>
+                  <Text style={styles.ingredientsText}>
+                    {product.ingredients_raw}
+                  </Text>
                 </View>
               )}
 
@@ -423,7 +461,7 @@ export default function ScanScreen() {
                       handleProductClose();
                       router.push(`/product/${product.id}`);
                     } else {
-                      Alert.alert('Error', 'Product ID not available');
+                      Alert.alert("Error", "Product ID not available");
                     }
                   }}
                 >
@@ -466,7 +504,10 @@ export default function ScanScreen() {
             />
             <View style={styles.manualEntryModalActions}>
               <TouchableOpacity
-                style={[styles.manualEntryButton, styles.manualEntryButtonCancel]}
+                style={[
+                  styles.manualEntryButton,
+                  styles.manualEntryButtonCancel,
+                ]}
                 onPress={handleManualEntryCancel}
               >
                 <Text style={styles.manualEntryButtonCancelText}>Cancel</Text>
@@ -475,7 +516,8 @@ export default function ScanScreen() {
                 style={[
                   styles.manualEntryButton,
                   styles.manualEntryButtonScan,
-                  (!manualBarcode || !manualBarcode.trim()) && styles.manualEntryButtonDisabled,
+                  (!manualBarcode || !manualBarcode.trim()) &&
+                    styles.manualEntryButtonDisabled,
                 ]}
                 onPress={handleManualScan}
                 disabled={!manualBarcode || !manualBarcode.trim()}
@@ -493,47 +535,47 @@ export default function ScanScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000',
+    backgroundColor: "#000",
   },
   camera: {
     flex: 1,
   },
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
   topSection: {
     paddingTop: 60,
     paddingHorizontal: 20,
-    alignItems: 'center',
+    alignItems: "center",
   },
   title: {
     fontSize: 28,
-    fontWeight: 'bold',
-    color: '#fff',
+    fontWeight: "bold",
+    color: "#fff",
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    color: '#fff',
-    textAlign: 'center',
+    color: "#fff",
+    textAlign: "center",
     opacity: 0.9,
   },
   scanFrameContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   scanFrame: {
     width: SCAN_AREA_SIZE,
     height: SCAN_AREA_SIZE,
-    position: 'relative',
+    position: "relative",
   },
   corner: {
-    position: 'absolute',
+    position: "absolute",
     width: 30,
     height: 30,
-    borderColor: '#6B46C1',
+    borderColor: "#6B46C1",
     borderWidth: 3,
   },
   topLeft: {
@@ -561,18 +603,18 @@ const styles = StyleSheet.create({
     borderTopWidth: 0,
   },
   scanLine: {
-    position: 'absolute',
-    top: '50%',
+    position: "absolute",
+    top: "50%",
     left: 0,
     right: 0,
     height: 2,
-    backgroundColor: '#6B46C1',
+    backgroundColor: "#6B46C1",
     opacity: 0.8,
   },
   bottomControls: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-around",
+    alignItems: "center",
     paddingHorizontal: 40,
     paddingBottom: 40,
   },
@@ -580,19 +622,19 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   shutterButton: {
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#6B46C1',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "#6B46C1",
+    justifyContent: "center",
+    alignItems: "center",
     borderWidth: 4,
-    borderColor: '#fff',
+    borderColor: "#fff",
   },
   shutterButtonDisabled: {
     opacity: 0.6,
@@ -601,32 +643,32 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
   },
   manualEntryButton: {
     marginTop: 20,
     paddingVertical: 12,
     paddingHorizontal: 24,
-    alignSelf: 'center',
-    backgroundColor: 'rgba(107, 70, 193, 0.8)',
+    alignSelf: "center",
+    backgroundColor: "rgba(107, 70, 193, 0.8)",
     borderRadius: 20,
   },
   manualEntryText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   permissionText: {
     fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
+    color: "#666",
+    textAlign: "center",
     marginTop: 16,
     paddingHorizontal: 40,
   },
   permissionTitle: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#000',
+    fontWeight: "bold",
+    color: "#000",
     marginTop: 24,
     marginBottom: 8,
   },
@@ -634,31 +676,31 @@ const styles = StyleSheet.create({
     marginTop: 32,
     paddingVertical: 14,
     paddingHorizontal: 32,
-    backgroundColor: '#6B46C1',
+    backgroundColor: "#6B46C1",
     borderRadius: 25,
   },
   permissionButtonText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   // Modal Styles
   modalContainer: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
   },
   modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    borderBottomColor: "#e0e0e0",
   },
   modalTitle: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#000',
+    fontWeight: "bold",
+    color: "#000",
   },
   modalContent: {
     flex: 1,
@@ -669,97 +711,97 @@ const styles = StyleSheet.create({
   },
   productName: {
     fontSize: 28,
-    fontWeight: 'bold',
-    color: '#000',
+    fontWeight: "bold",
+    color: "#000",
     marginBottom: 8,
   },
   productBrand: {
     fontSize: 18,
-    color: '#666',
+    color: "#666",
     marginBottom: 4,
   },
   productBarcode: {
     fontSize: 14,
-    color: '#999',
+    color: "#999",
   },
   healthScoreContainer: {
     marginBottom: 24,
     padding: 16,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: "#f5f5f5",
     borderRadius: 12,
   },
   healthScoreLabel: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#000',
+    fontWeight: "600",
+    color: "#000",
     marginBottom: 8,
   },
   healthScoreBar: {
     height: 8,
-    backgroundColor: '#e0e0e0',
+    backgroundColor: "#e0e0e0",
     borderRadius: 4,
-    overflow: 'hidden',
+    overflow: "hidden",
     marginBottom: 8,
   },
   healthScoreFill: {
-    height: '100%',
-    backgroundColor: '#6B46C1',
+    height: "100%",
+    backgroundColor: "#6B46C1",
   },
   healthScoreValue: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#6B46C1',
+    fontWeight: "bold",
+    color: "#6B46C1",
   },
   section: {
     marginBottom: 24,
   },
   sectionTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
-    color: '#000',
+    fontWeight: "bold",
+    color: "#000",
     marginBottom: 12,
   },
   nutritionGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: 12,
   },
   nutritionItem: {
     flex: 1,
-    minWidth: '45%',
+    minWidth: "45%",
     padding: 12,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: "#f5f5f5",
     borderRadius: 8,
   },
   nutritionLabel: {
     fontSize: 14,
-    color: '#666',
+    color: "#666",
     marginBottom: 4,
   },
   nutritionValue: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#000',
+    fontWeight: "bold",
+    color: "#000",
   },
   allergenList: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: 8,
   },
   allergenTag: {
     paddingVertical: 6,
     paddingHorizontal: 12,
-    backgroundColor: '#ffebee',
+    backgroundColor: "#ffebee",
     borderRadius: 16,
   },
   allergenText: {
     fontSize: 14,
-    color: '#c62828',
-    fontWeight: '500',
+    color: "#c62828",
+    fontWeight: "500",
   },
   ingredientsText: {
     fontSize: 16,
-    color: '#333',
+    color: "#333",
     lineHeight: 24,
   },
   modalActions: {
@@ -768,32 +810,32 @@ const styles = StyleSheet.create({
   actionButton: {
     paddingVertical: 16,
     paddingHorizontal: 24,
-    backgroundColor: '#6B46C1',
+    backgroundColor: "#6B46C1",
     borderRadius: 12,
-    alignItems: 'center',
+    alignItems: "center",
   },
   actionButtonText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   // Manual Entry Modal Styles
   manualEntryModalContainer: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
   },
   manualEntryModalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    borderBottomColor: "#e0e0e0",
   },
   manualEntryModalTitle: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#000',
+    fontWeight: "bold",
+    color: "#000",
   },
   manualEntryModalContent: {
     flex: 1,
@@ -801,20 +843,20 @@ const styles = StyleSheet.create({
   },
   manualEntryModalLabel: {
     fontSize: 16,
-    color: '#666',
+    color: "#666",
     marginBottom: 16,
   },
   manualEntryInput: {
     borderWidth: 1,
-    borderColor: '#e0e0e0',
+    borderColor: "#e0e0e0",
     borderRadius: 8,
     padding: 16,
     fontSize: 18,
-    backgroundColor: '#f9fafb',
+    backgroundColor: "#f9fafb",
     marginBottom: 24,
   },
   manualEntryModalActions: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 12,
   },
   manualEntryButton: {
@@ -822,25 +864,25 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     paddingHorizontal: 24,
     borderRadius: 8,
-    alignItems: 'center',
+    alignItems: "center",
   },
   manualEntryButtonCancel: {
-    backgroundColor: '#f5f5f5',
+    backgroundColor: "#f5f5f5",
   },
   manualEntryButtonScan: {
-    backgroundColor: '#6B46C1',
+    backgroundColor: "#6B46C1",
   },
   manualEntryButtonDisabled: {
     opacity: 0.5,
   },
   manualEntryButtonCancelText: {
-    color: '#666',
+    color: "#666",
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   manualEntryButtonScanText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
 });
