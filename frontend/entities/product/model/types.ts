@@ -14,6 +14,7 @@ export interface Product {
     per_serving: NutritionFacts;
   };
   allergens?: string[];
+  warnings?: string[];
   images?: string[];
   health_score?: number;
   source?: string;
@@ -33,4 +34,3 @@ export interface NutritionFacts {
   salt?: number;
   sodium?: number;
 }
-

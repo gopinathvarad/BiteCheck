@@ -113,7 +113,10 @@ export default function ProductDetailScreen() {
           perServing={product.nutrition?.per_serving}
         />
 
-        <AllergensSection allergens={product.allergens} />
+        <AllergensSection
+          allergens={product.allergens}
+          warnings={product.warnings}
+        />
 
         <IngredientsSection product={product} />
 

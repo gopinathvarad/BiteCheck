@@ -38,6 +38,7 @@ class Product(BaseModel):
     ingredients_parsed: Optional[List[str]] = None
     nutrition: Optional[Nutrition] = None
     allergens: Optional[List[str]] = None
+    warnings: Optional[List[str]] = None
     images: Optional[List[str]] = None
     health_score: Optional[float] = None
     source: Optional[str] = None
