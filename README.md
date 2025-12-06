@@ -1,182 +1,189 @@
-# BiteCheck - Scan & Nutrition App
+# BiteCheck - Scan, Check, Eat Safe
 
-A cross-platform mobile application that allows users to scan QR codes and barcodes on packaged products to receive comprehensive nutrition information, ingredient lists, allergen flags, and health guidance.
+BiteCheck is a comprehensive mobile application designed to help users make informed food choices. By scanning product barcodes, users can instantly access detailed nutritional information, ingredient lists, and personalized health warnings based on their specific allergies and dietary restrictions.
 
-## Overview
+The platform includes a robust mobile app for users, a powerful backend API, and an administrative dashboard for managing crowdsourced data corrections.
 
-BiteCheck is a feature-rich nutrition scanning app that helps users make informed food choices by providing:
-- **Product Scanning**: Scan barcodes/QR codes to instantly retrieve product information
-- **Nutrition Details**: Comprehensive nutrition facts, ingredients, and allergen information
-- **Personalization**: User preferences for allergies, dietary restrictions, and health goals
-- **History & Favorites**: Track scanned products and save favorites
-- **Crowdsourced Corrections**: Community-driven product data improvements
+## 🚀 Key Features
 
-## Tech Stack
+### Mobile App (Consumer)
 
-- **Frontend**: React Native (Expo SDK 51)
-- **Backend**: Python 3.11+ with FastAPI
-- **Database/Auth/Storage**: Supabase (PostgreSQL, Auth, Storage)
-- **External APIs**: Open Food Facts (primary), USDA FoodData Central
-- **Type Safety**: TypeScript (frontend), Pydantic (backend)
+- **Instant Scanning**: Fast barcode and QR code scanning to retrieve product data.
+- **Personalized Safety**: Automatic checks against user-defined allergies and dietary restrictions.
+- **Health Scores**: Clear visualization of product healthiness (e.g., Nutri-Score).
+- **Detailed Insights**: Comprehensive breakdown of nutrition facts and ingredients.
+- **History & Favorites**: specific lists to track previously scanned and favorite items.
+- **Community Contributions**: Users can submit corrections for inaccurate product data.
 
-## Project Structure
+### Admin Dashboard (Management)
+
+- **Correction Review**: Interface for admins to review, approve, or reject user-submitted product corrections.
+- **Data Management**: Tools to ensure the accuracy and integrity of the product database.
+
+## 🛠 Tech Stack
+
+BiteCheck is built as a modern monorepo-style project with three main components:
+
+### 1. Mobile App (`/frontend`)
+
+- **Framework**: React Native with [Expo SDK 51](https://expo.dev)
+- **Language**: TypeScript
+- **Routing**: Expo Router
+- **UI**: Custom components with Expo standard libraries
+- **State/Data**: React Query, Context API
+
+### 2. Backend API (`/backend`)
+
+- **Framework**: Python FastAPI
+- **Language**: Python 3.11+
+- **Database**: Supabase (PostgreSQL)
+- **Validation**: Pydantic v2
+- **Testing**: Pytest
+
+### 3. Admin Dashboard (`/admin-dashboard`)
+
+- **Framework**: Next.js 15+ (React 19)
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS 4
+- **Auth**: Supabase Auth
+
+## 📂 Project Structure
 
 ```
 BiteCheck/
-├── frontend/              # React Native Expo mobile app
-│   ├── app/              # Expo Router app directory
-│   ├── entities/         # Domain entities (product, scan, user)
-│   ├── features/         # Feature modules (auth, favorites, history, etc.)
-│   ├── shared/           # Shared utilities and types
-│   └── widgets/          # Reusable UI widgets
-├── backend/              # FastAPI Python backend
-│   ├── app/
-│   │   ├── api/          # API routes and endpoints
-│   │   ├── core/         # Configuration and database
-│   │   ├── entities/     # Domain entities
-│   │   ├── features/     # Feature modules (scan, product, user, correction)
-│   │   ├── external/     # External API clients
-│   │   ├── services/     # Business logic services
-│   │   └── shared/       # Shared models and utilities
-│   ├── migrations/       # Database migration files
-│   └── tests/            # Test suite
-└── Docs/                 # Project documentation
-    ├── prd_scan_nutrition_app_react_native_fast_api_supabase.md
-    ├── project_design_philosophy.md
-    └── FSD_MIGRATION.md
+├── frontend/              # React Native Expo mobile application
+│   ├── app/               # Expo Router pages and layouts
+│   ├── entities/          # Domain entities (User, Product, Scan)
+│   ├── features/          # Feature-based logic (Auth, Scanner, History)
+│   └── shared/            # Shared utilities and UI components
+│
+├── backend/               # FastAPI Python backend
+│   ├── app/               # Application source code
+│   │   ├── api/           # API Endpoints
+│   │   ├── features/      # Business logic grouped by feature
+│   │   └── services/      # External integrations (OpenFoodFacts, etc.)
+│   ├── migrations/        # Database migrations
+│   └── tests/             # Backend test suite
+│
+├── admin-dashboard/       # Next.js web dashboard for admins
+│   ├── app/               # App Router pages
+│   └── lib/               # Utilities and Supabase client
+│
+└── Docs/                  # Project documentation and design docs
 ```
 
-## Getting Started
+## 📦 Getting Started
 
 ### Prerequisites
 
-- **Node.js** 18+ and npm/yarn
-- **Python** 3.11+
-- **Expo CLI** (`npm install -g expo-cli`)
-- **Supabase** account and project
-- **Git** for version control
+- Node.js 18+
+- Python 3.11+
+- Supabase Account (for DB and Auth)
+- Expo Go app on your phone (or a simulator)
 
-### Frontend Setup
+---
 
-1. Navigate to the frontend directory:
-```bash
-cd frontend
-```
+### 🟢 1. Mobile App Setup
 
-2. Install dependencies:
-```bash
-npm install
-```
+1. **Navigate to the frontend directory:**
 
-3. Configure environment variables:
-```bash
-cp env.example .env
-# Edit .env with your Supabase credentials
-```
+   ```bash
+   cd frontend
+   ```
 
-4. Start the development server:
-```bash
-npm start
-```
+2. **Install dependencies:**
 
-For more details, see [frontend/README.md](frontend/README.md)
+   ```bash
+   npm install
+   ```
 
-### Backend Setup
+3. **Configure Environment:**
 
-1. Navigate to the backend directory:
-```bash
-cd backend
-```
+   ```bash
+   cp env.example .env
+   # Add your EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY
+   ```
 
-2. Create and activate a virtual environment:
-```bash
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-```
+4. **Run the App:**
+   ```bash
+   npx expo start
+   ```
+   Scan the QR code with your phone (Expo Go) or press `i` for iOS Simulator / `a` for Android Emulator.
 
-3. Install dependencies:
-```bash
-pip install -r requirements.txt
-```
+---
 
-4. Configure environment variables:
-```bash
-cp .env.example .env
-# Edit .env with your Supabase credentials and configuration
-```
+### 🔵 2. Backend Setup
 
-5. Run the development server:
-```bash
-uvicorn app.main:app --reload
-```
+1. **Navigate to the backend directory:**
 
-The API will be available at `http://localhost:8000`  
-API documentation at `http://localhost:8000/docs`
+   ```bash
+   cd backend
+   ```
 
-For more details, see [backend/README.md](backend/README.md)
+2. **Create and Activate Virtual Environment:**
 
-### Database Setup
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # Windows: venv\Scripts\activate
+   ```
 
-1. Apply database migrations:
-   - See [backend/migrations/README.md](backend/migrations/README.md) for detailed instructions
-   - Migrations can be applied via Supabase Dashboard, CLI, or psql
+3. **Install Dependencies:**
 
-2. Verify tables are created:
-   - Check Supabase dashboard for all tables
-   - Verify Row Level Security (RLS) policies are enabled
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-## Key Features
+4. **Configure Environment:**
 
-### MVP Features
-- ✅ Barcode/QR code scanning
-- ✅ Product lookup from Open Food Facts
-- ✅ Nutrition information display
-- ✅ Ingredient lists and allergen flags
-- ✅ User authentication
-- ✅ Scan history
-- ✅ Favorites
-- ✅ User preferences (allergies, dietary restrictions)
-- ✅ Crowdsourced corrections
+   ```bash
+   cp .env.example .env
+   # Configure SUPABASE_URL, SUPABASE_KEY, etc.
+   ```
 
-### Architecture Highlights
-- **Feature-based organization**: Code organized by features for better maintainability
-- **Entity-driven design**: Clear separation of domain entities
-- **Type safety**: Full TypeScript and Pydantic validation
-- **API versioning**: RESTful API with versioning support
-- **Database migrations**: Version-controlled schema changes
+5. **Run the Server:**
+   ```bash
+   uvicorn app.main:app --reload
+   ```
+   The API will be live at `http://localhost:8000`. Docs available at `/docs`.
 
-## Development
+---
 
-### Code Quality
-- **Backend**: 
-  - Format: `black app/`
-  - Lint: `flake8 app/`
-  - Type check: `mypy app/`
-  - Test: `pytest`
+### 🟣 3. Admin Dashboard Setup
 
-- **Frontend**:
-  - TypeScript for type safety
-  - ESLint for code quality
+1. **Navigate to the directory:**
 
-### Testing
-- Backend tests: `pytest` (from `backend/` directory)
-- Frontend tests: See `frontend/README.md`
+   ```bash
+   cd admin-dashboard
+   ```
 
-## Documentation
+2. **Install Dependencies:**
 
-- [Product Requirements Document](Docs/prd_scan_nutrition_app_react_native_fast_api_supabase.md)
-- [Project Design Philosophy](Docs/project_design_philosophy.md)
-- [Database Migrations Guide](backend/migrations/README.md)
-- [Backend API Documentation](backend/README.md)
-- [Frontend Setup Guide](frontend/README.md)
+   ```bash
+   npm install
+   ```
 
-## Contributing
+3. **Run Development Server:**
+   ```bash
+   npm run dev
+   ```
+   Access the dashboard at `http://localhost:3000`.
 
-1. Create a feature branch
-2. Make your changes
-3. Run tests and linting
-4. Submit a pull request
+## 📚 Documentation
 
-## License
+Detailed documentation can be found in the `Docs` directory:
 
-MIT
+- [Product Requirements (PRD)](Docs/prd_scan_nutrition_app_react_native_fast_api_supabase.md)
+- [Design Philosophy](Docs/project_design_philosophy.md)
+- [Feature Breakdown](Docs/FSD_MIGRATION.md)
+
+## 🤝 Contributing
+
+1. Fork the repository.
+2. Create a feature branch (`git checkout -b feature/amazing-feature`).
+3. Commit your changes (`git commit -m 'Add amazing feature'`).
+4. Push to the branch (`git push origin feature/amazing-feature`).
+5. Open a Pull Request.
+
+## 📄 License
+
+This project is licensed under the MIT License.

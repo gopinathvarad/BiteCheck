@@ -90,6 +90,14 @@ class OpenFoodFactsClient:
         if data.get("image_small_url"):
             images.append(data["image_small_url"])
         
+        # Parse health score
+        health_score = None
+        if data.get("nutriscore_score") is not None:
+             try:
+                 health_score = float(data["nutriscore_score"])
+             except (ValueError, TypeError):
+                 pass
+
         return Product(
             barcode=barcode,
             name=data.get("product_name", ""),
@@ -102,6 +110,7 @@ class OpenFoodFactsClient:
             nutrition=nutrition,
             allergens=allergens if allergens else None,
             images=images if images else None,
+            health_score=health_score,
             source="openfoodfacts"
         )
 
