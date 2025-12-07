@@ -1,7 +1,8 @@
 import React from "react";
-import { View, Text, StyleSheet, Image } from "react-native";
+import { View, StyleSheet } from "react-native";
 import { Image as ExpoImage } from "expo-image";
 import { Product } from "../../../entities/product/model/types";
+import { AppText, colors, layout } from "../../../shared/ui";
 
 interface ProductDetailHeaderProps {
   product: Product;
@@ -24,21 +25,45 @@ export function ProductDetailHeader({ product }: ProductDetailHeaderProps) {
         />
       ) : (
         <View style={[styles.image, styles.placeholderImage]}>
-          <Text style={styles.placeholderText}>No Image</Text>
+          <AppText variant="body" color={colors.text.tertiary}>
+            No Image
+          </AppText>
         </View>
       )}
 
       {/* Product Info */}
       <View style={styles.infoContainer}>
-        <Text style={styles.name}>{product.name}</Text>
-        {!!product.brand && <Text style={styles.brand}>{product.brand}</Text>}
+        <AppText variant="h2" style={styles.name}>
+          {product.name}
+        </AppText>
+        {!!product.brand && (
+          <AppText
+            variant="body"
+            color={colors.text.secondary}
+            style={styles.brand}
+          >
+            {product.brand}
+          </AppText>
+        )}
         {!!product.category && (
           <View style={styles.categoryContainer}>
-            <Text style={styles.category}>{product.category}</Text>
+            <AppText
+              variant="caption"
+              color={colors.text.secondary}
+              weight="medium"
+            >
+              {product.category}
+            </AppText>
           </View>
         )}
         {!!product.barcode && (
-          <Text style={styles.barcode}>Barcode: {product.barcode}</Text>
+          <AppText
+            variant="caption"
+            color={colors.text.tertiary}
+            style={styles.barcode}
+          >
+            Barcode: {product.barcode}
+          </AppText>
         )}
       </View>
     </View>
@@ -47,53 +72,36 @@ export function ProductDetailHeader({ product }: ProductDetailHeaderProps) {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#fff",
+    backgroundColor: colors.card,
   },
   image: {
     width: "100%",
     height: 300,
-    backgroundColor: "#f5f5f5",
+    backgroundColor: colors.action.hover,
   },
   placeholderImage: {
     justifyContent: "center",
     alignItems: "center",
   },
-  placeholderText: {
-    fontSize: 16,
-    color: "#999",
-  },
   infoContainer: {
-    padding: 20,
+    padding: layout.spacing.l,
+    paddingBottom: 0,
   },
   name: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: "#1a1a1a",
-    marginBottom: 8,
-    lineHeight: 34,
+    marginBottom: layout.spacing.s,
   },
   brand: {
-    fontSize: 18,
-    color: "#666",
-    marginBottom: 12,
-    fontWeight: "500",
+    marginBottom: layout.spacing.m,
   },
   categoryContainer: {
     alignSelf: "flex-start",
-    backgroundColor: "#f0f0f0",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
-    marginBottom: 12,
-  },
-  category: {
-    fontSize: 14,
-    color: "#666",
-    fontWeight: "500",
+    backgroundColor: colors.background,
+    paddingHorizontal: layout.spacing.m,
+    paddingVertical: layout.spacing.s,
+    borderRadius: layout.borderRadius.m,
+    marginBottom: layout.spacing.m,
   },
   barcode: {
-    fontSize: 14,
-    color: "#999",
-    fontFamily: "monospace",
+    fontFamily: "monospace", // Optional: keep monospace for barcode
   },
 });

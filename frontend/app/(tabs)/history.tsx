@@ -1,29 +1,20 @@
-import { View, Text, StyleSheet } from 'react-native';
+import React from "react";
+import { AppText, ScreenWrapper, colors, layout } from "../../shared/ui";
 
 export default function HistoryScreen() {
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Scan History</Text>
-      <Text style={styles.subtitle}>Your scanned products will appear here</Text>
-    </View>
+    <ScreenWrapper
+      bg={colors.background}
+      style={{
+        justifyContent: "center",
+        alignItems: "center",
+        gap: layout.spacing.s,
+      }}
+    >
+      <AppText variant="h2">Scan History</AppText>
+      <AppText variant="body" color={colors.text.secondary}>
+        Your scanned products will appear here
+      </AppText>
+    </ScreenWrapper>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#666',
-  },
-});
-

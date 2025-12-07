@@ -1,6 +1,7 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import React from "react";
+import { View, StyleSheet } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { AppText, AppCard, colors, layout } from "../../../shared/ui";
 
 interface HealthScoreIndicatorProps {
   score: number;
@@ -8,98 +9,82 @@ interface HealthScoreIndicatorProps {
 
 export function HealthScoreIndicator({ score }: HealthScoreIndicatorProps) {
   const getScoreColor = (score: number) => {
-    if (score >= 70) return '#10b981'; // Green
-    if (score >= 50) return '#f59e0b'; // Yellow
-    return '#ef4444'; // Red
+    if (score >= 70) return colors.success;
+    if (score >= 50) return colors.warning;
+    return colors.error;
   };
 
   const getScoreLabel = (score: number) => {
-    if (score >= 70) return 'Excellent';
-    if (score >= 50) return 'Good';
-    if (score >= 30) return 'Fair';
-    return 'Poor';
+    if (score >= 70) return "Excellent";
+    if (score >= 50) return "Good";
+    if (score >= 30) return "Fair";
+    return "Poor";
   };
 
   const color = getScoreColor(score);
   const label = getScoreLabel(score);
 
   return (
-    <View style={styles.container}>
+    <AppCard>
       <View style={styles.header}>
         <Ionicons name="heart" size={24} color={color} />
-        <Text style={styles.title}>Health Score</Text>
+        <AppText variant="h3" style={styles.title}>
+          Health Score
+        </AppText>
       </View>
       <View style={styles.scoreContainer}>
         <View style={styles.scoreCircle}>
-          <Text style={[styles.scoreText, { color }]}>{score}</Text>
-          <Text style={styles.scoreLabel}>/100</Text>
+          <AppText variant="h1" style={{ fontSize: 48, lineHeight: 56, color }}>
+            {score}
+          </AppText>
+          <AppText variant="body" color={colors.text.tertiary}>
+            /100
+          </AppText>
         </View>
         <View style={styles.labelContainer}>
-          <Text style={[styles.label, { color }]}>{label}</Text>
+          <AppText variant="h3" style={{ color }}>
+            {label}
+          </AppText>
         </View>
       </View>
       <View style={styles.barContainer}>
-        <View style={[styles.bar, { width: `${score}%`, backgroundColor: color }]} />
+        <View
+          style={[styles.bar, { width: `${score}%`, backgroundColor: color }]}
+        />
       </View>
-    </View>
+    </AppCard>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    backgroundColor: '#fff',
-    padding: 20,
-    marginTop: 8,
-    borderTopWidth: 1,
-    borderBottomWidth: 1,
-    borderColor: '#f0f0f0',
-  },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: layout.spacing.m,
   },
   title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#1a1a1a',
-    marginLeft: 8,
+    marginLeft: layout.spacing.s,
   },
   scoreContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: layout.spacing.m,
   },
   scoreCircle: {
-    alignItems: 'center',
-    marginRight: 16,
-  },
-  scoreText: {
-    fontSize: 48,
-    fontWeight: 'bold',
-    lineHeight: 56,
-  },
-  scoreLabel: {
-    fontSize: 16,
-    color: '#999',
-    marginTop: -4,
+    alignItems: "center",
+    marginRight: layout.spacing.m,
   },
   labelContainer: {
     flex: 1,
   },
-  label: {
-    fontSize: 18,
-    fontWeight: '600',
-  },
   barContainer: {
     height: 8,
-    backgroundColor: '#f0f0f0',
-    borderRadius: 4,
-    overflow: 'hidden',
+    backgroundColor: colors.border,
+    borderRadius: layout.borderRadius.s,
+    overflow: "hidden",
   },
   bar: {
-    height: '100%',
-    borderRadius: 4,
+    height: "100%",
+    borderRadius: layout.borderRadius.s,
   },
 });
-

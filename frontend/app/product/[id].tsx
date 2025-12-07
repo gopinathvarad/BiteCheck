@@ -1,14 +1,12 @@
 import React from "react";
 import {
   View,
-  Text,
   StyleSheet,
   ScrollView,
   ActivityIndicator,
   TouchableOpacity,
   Alert,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { Ionicons } from "@expo/vector-icons";
@@ -21,6 +19,13 @@ import {
   AllergensSection,
   ProductInfoSection,
 } from "../../features/product/ui";
+import {
+  AppText,
+  AppButton,
+  ScreenWrapper,
+  colors,
+  layout,
+} from "../../shared/ui";
 
 export default function ProductDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -29,71 +34,69 @@ export default function ProductDetailScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.container} edges={["top"]}>
+      <ScreenWrapper style={styles.centerContainer}>
         <StatusBar style="dark" />
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#6B46C1" />
-          <Text style={styles.loadingText}>Loading product...</Text>
-        </View>
-      </SafeAreaView>
+        <ActivityIndicator size="large" color={colors.primary} />
+        <AppText style={styles.marginTop}>Loading product...</AppText>
+      </ScreenWrapper>
     );
   }
 
   if (error || !data?.success || !data.data) {
     return (
-      <SafeAreaView style={styles.container} edges={["top"]}>
+      <ScreenWrapper style={styles.centerContainer} withPadding>
         <StatusBar style="dark" />
-        <View style={styles.errorContainer}>
-          <Ionicons name="alert-circle-outline" size={64} color="#ef4444" />
-          <Text style={styles.errorTitle}>Failed to load product</Text>
-          <Text style={styles.errorText}>
-            {error instanceof Error ? error.message : "Something went wrong"}
-          </Text>
-          <TouchableOpacity
-            style={styles.retryButton}
-            onPress={() => refetch()}
-          >
-            <Text style={styles.retryButtonText}>Try Again</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => router.back()}
-          >
-            <Text style={styles.backButtonText}>Go Back</Text>
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
+        <Ionicons name="alert-circle-outline" size={64} color={colors.error} />
+        <AppText variant="h3" style={styles.marginTop}>
+          Failed to load product
+        </AppText>
+        <AppText
+          style={{
+            textAlign: "center",
+            marginVertical: layout.spacing.m,
+            color: colors.text.secondary,
+          }}
+        >
+          {error instanceof Error ? error.message : "Something went wrong"}
+        </AppText>
+        <AppButton title="Try Again" onPress={() => refetch()} />
+        <AppButton
+          title="Go Back"
+          variant="outline"
+          onPress={() => router.back()}
+          style={{ marginTop: layout.spacing.m }}
+        />
+      </ScreenWrapper>
     );
   }
 
   const product = data.data;
 
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
+    <ScreenWrapper bg={colors.background}>
       <StatusBar style="dark" />
 
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
-          style={styles.backButton}
           onPress={() => router.back()}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <Ionicons name="arrow-back" size={24} color="#1a1a1a" />
+          <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Product Details</Text>
-        <View style={styles.headerRight}>
-          <TouchableOpacity
-            style={styles.iconButton}
-            onPress={() => {
-              // TODO: Implement share functionality
-              Alert.alert("Share", "Share functionality coming soon");
-            }}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            <Ionicons name="share-outline" size={24} color="#1a1a1a" />
-          </TouchableOpacity>
-        </View>
+        <AppText variant="h3">Product Details</AppText>
+        <TouchableOpacity
+          onPress={() => {
+            Alert.alert("Share", "Share functionality coming soon");
+          }}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Ionicons
+            name="share-outline"
+            size={24}
+            color={colors.text.primary}
+          />
+        </TouchableOpacity>
       </View>
 
       {/* Content */}
@@ -104,154 +107,98 @@ export default function ProductDetailScreen() {
       >
         <ProductDetailHeader product={product} />
 
-        {product.health_score !== undefined && (
-          <HealthScoreIndicator score={product.health_score} />
-        )}
+        <View style={styles.contentPadding}>
+          {product.health_score !== undefined && (
+            <HealthScoreIndicator score={product.health_score} />
+          )}
 
-        <NutritionFactsSection
-          per100g={product.nutrition?.per_100g}
-          perServing={product.nutrition?.per_serving}
-        />
-
-        <AllergensSection
-          allergens={product.allergens}
-          warnings={product.warnings}
-        />
-
-        <IngredientsSection product={product} />
-
-        <ProductInfoSection product={product} />
-
-        <TouchableOpacity
-          style={styles.correctionButton}
-          onPress={() => {
-            router.push({
-              pathname: "/correction",
-              params: {
-                productId: product.id,
-                fieldName: "General", // Default to General for now, ideally user selects field
-                oldValue: product.name || "",
-              },
-            });
-          }}
-        >
-          <Ionicons
-            name="flag-outline"
-            size={20}
-            color="#666"
-            style={{ marginRight: 8 }}
+          <NutritionFactsSection
+            per100g={product.nutrition?.per_100g}
+            perServing={product.nutrition?.per_serving}
           />
-          <Text style={styles.correctionButtonText}>Suggest a Correction</Text>
-        </TouchableOpacity>
 
-        {/* Bottom spacing */}
-        <View style={styles.bottomSpacing} />
+          <AllergensSection
+            allergens={product.allergens}
+            warnings={product.warnings}
+          />
+
+          <IngredientsSection product={product} />
+
+          <ProductInfoSection product={product} />
+
+          <TouchableOpacity
+            style={styles.correctionButton}
+            onPress={() => {
+              router.push({
+                pathname: "/correction",
+                params: {
+                  productId: product.id,
+                  fieldName: "General",
+                  oldValue: product.name || "",
+                },
+              });
+            }}
+          >
+            <Ionicons
+              name="flag-outline"
+              size={20}
+              color={colors.text.secondary}
+              style={{ marginRight: 8 }}
+            />
+            <AppText variant="button" color={colors.text.secondary}>
+              Suggest a Correction
+            </AppText>
+          </TouchableOpacity>
+
+          {/* Bottom spacing */}
+          <View style={styles.bottomSpacing} />
+        </View>
       </ScrollView>
-    </SafeAreaView>
+    </ScreenWrapper>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  centerContainer: {
     flex: 1,
-    backgroundColor: "#f9fafb",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  marginTop: {
+    marginTop: layout.spacing.m,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: "#fff",
+    paddingHorizontal: layout.spacing.l,
+    paddingVertical: layout.spacing.m,
+    backgroundColor: colors.card,
     borderBottomWidth: 1,
-    borderBottomColor: "#e0e0e0",
-  },
-  backButton: {
-    padding: 4,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#1a1a1a",
-  },
-  headerRight: {
-    width: 40,
-    alignItems: "flex-end",
-  },
-  iconButton: {
-    padding: 4,
+    borderBottomColor: colors.border,
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: 20,
+    paddingBottom: layout.spacing.l,
   },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 16,
-  },
-  loadingText: {
-    fontSize: 16,
-    color: "#666",
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 32,
-    gap: 16,
-  },
-  errorTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#1a1a1a",
-    marginTop: 8,
-  },
-  errorText: {
-    fontSize: 14,
-    color: "#666",
-    textAlign: "center",
-    marginBottom: 8,
-  },
-  retryButton: {
-    marginTop: 16,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    backgroundColor: "#6B46C1",
-    borderRadius: 8,
-  },
-  retryButtonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  backButtonText: {
-    color: "#6B46C1",
-    fontSize: 16,
-    fontWeight: "600",
-    marginTop: 12,
-  },
-  bottomSpacing: {
-    height: 20,
+  contentPadding: {
+    padding: layout.spacing.l,
+    gap: layout.spacing.l,
   },
   correctionButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    padding: 16,
-    backgroundColor: "#fff",
-    marginTop: 20,
-    marginHorizontal: 16,
-    borderRadius: 12,
+    padding: layout.spacing.m,
+    backgroundColor: colors.card,
+    borderRadius: layout.borderRadius.l,
     borderWidth: 1,
-    borderColor: "#e0e0e0",
+    borderColor: colors.border,
+    marginTop: layout.spacing.l,
   },
-  correctionButtonText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#666",
+  bottomSpacing: {
+    height: 20,
   },
 });

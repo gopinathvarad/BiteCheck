@@ -1,6 +1,7 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { View, StyleSheet, TouchableOpacity } from "react-native";
 import { NutritionFacts } from "../../../entities/product/model/types";
+import { AppText, AppCard, colors, layout } from "../../../shared/ui";
 
 interface NutritionFactsSectionProps {
   per100g?: NutritionFacts;
@@ -18,19 +19,27 @@ export function NutritionFactsSection({
 
   if (!nutritionData) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.sectionTitle}>Nutrition Facts</Text>
-        <Text style={styles.noDataText}>
+      <AppCard>
+        <AppText variant="h3" style={styles.sectionTitle}>
+          Nutrition Facts
+        </AppText>
+        <AppText
+          variant="body"
+          color={colors.text.tertiary}
+          style={{ fontStyle: "italic" }}
+        >
           Nutrition information not available
-        </Text>
-      </View>
+        </AppText>
+      </AppCard>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <AppCard>
       <View style={styles.header}>
-        <Text style={styles.sectionTitle}>Nutrition Facts</Text>
+        <AppText variant="h3" style={styles.sectionTitle}>
+          Nutrition Facts
+        </AppText>
         {hasBoth && (
           <View style={styles.toggleContainer}>
             <TouchableOpacity
@@ -40,14 +49,16 @@ export function NutritionFactsSection({
               ]}
               onPress={() => setSelectedView("100g")}
             >
-              <Text
+              <AppText
+                variant="caption"
                 style={[
-                  styles.toggleText,
-                  selectedView === "100g" && styles.toggleTextActive,
+                  selectedView === "100g"
+                    ? styles.toggleTextActive
+                    : styles.toggleText,
                 ]}
               >
                 Per 100g
-              </Text>
+              </AppText>
             </TouchableOpacity>
             <TouchableOpacity
               style={[
@@ -56,14 +67,16 @@ export function NutritionFactsSection({
               ]}
               onPress={() => setSelectedView("serving")}
             >
-              <Text
+              <AppText
+                variant="caption"
                 style={[
-                  styles.toggleText,
-                  selectedView === "serving" && styles.toggleTextActive,
+                  selectedView === "serving"
+                    ? styles.toggleTextActive
+                    : styles.toggleText,
                 ]}
               >
                 Per Serving
-              </Text>
+              </AppText>
             </TouchableOpacity>
           </View>
         )}
@@ -125,7 +138,7 @@ export function NutritionFactsSection({
           <NutritionRow label="Sodium" value={`${nutritionData.sodium}mg`} />
         )}
       </View>
-    </View>
+    </AppCard>
   );
 }
 
@@ -139,48 +152,45 @@ interface NutritionRowProps {
 function NutritionRow({ label, value, highlight, indent }: NutritionRowProps) {
   return (
     <View style={[styles.row, highlight && styles.highlightRow]}>
-      <Text style={[styles.label, indent && styles.indentLabel]}>{label}</Text>
-      <Text style={[styles.value, highlight && styles.highlightValue]}>
+      <AppText
+        variant={indent ? "caption" : "body"}
+        style={[styles.label, indent && styles.indentLabel]}
+      >
+        {label}
+      </AppText>
+      <AppText
+        variant={highlight ? "h3" : "body"}
+        weight={highlight ? "bold" : "regular"}
+      >
         {value}
-      </Text>
+      </AppText>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    backgroundColor: "#fff",
-    padding: 20,
-    marginTop: 8,
-    borderTopWidth: 1,
-    borderBottomWidth: 1,
-    borderColor: "#f0f0f0",
-  },
   header: {
-    marginBottom: 16,
+    marginBottom: layout.spacing.m,
   },
   sectionTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#1a1a1a",
-    marginBottom: 12,
+    marginBottom: layout.spacing.s,
   },
   toggleContainer: {
     flexDirection: "row",
-    backgroundColor: "#f5f5f5",
-    borderRadius: 8,
+    backgroundColor: colors.background,
+    borderRadius: layout.borderRadius.m,
     padding: 4,
-    marginTop: 8,
+    marginTop: layout.spacing.s,
   },
   toggleButton: {
     flex: 1,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 6,
+    paddingVertical: layout.spacing.s,
+    paddingHorizontal: layout.spacing.m,
+    borderRadius: layout.borderRadius.s,
     alignItems: "center",
   },
   toggleButtonActive: {
-    backgroundColor: "#fff",
+    backgroundColor: colors.card,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
@@ -188,56 +198,36 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   toggleText: {
-    fontSize: 14,
-    color: "#666",
-    fontWeight: "500",
+    color: colors.text.secondary,
   },
   toggleTextActive: {
-    color: "#6B46C1",
-    fontWeight: "600",
+    color: colors.primary,
+    fontWeight: "bold",
   },
   table: {
     borderWidth: 1,
-    borderColor: "#e0e0e0",
-    borderRadius: 8,
+    borderColor: colors.border,
+    borderRadius: layout.borderRadius.m,
     overflow: "hidden",
   },
   row: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingVertical: layout.spacing.m,
+    paddingHorizontal: layout.spacing.m,
     borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
+    borderBottomColor: colors.border,
   },
   highlightRow: {
-    backgroundColor: "#f9fafb",
+    backgroundColor: colors.background,
     borderBottomWidth: 2,
-    borderBottomColor: "#e0e0e0",
   },
   label: {
-    fontSize: 16,
-    color: "#333",
     flex: 1,
   },
   indentLabel: {
-    paddingLeft: 20,
-    fontSize: 14,
-    color: "#666",
-  },
-  value: {
-    fontSize: 16,
-    color: "#1a1a1a",
-    fontWeight: "600",
-  },
-  highlightValue: {
-    fontSize: 18,
-    fontWeight: "bold",
-  },
-  noDataText: {
-    fontSize: 14,
-    color: "#999",
-    fontStyle: "italic",
+    paddingLeft: layout.spacing.l,
+    color: colors.text.secondary,
   },
 });

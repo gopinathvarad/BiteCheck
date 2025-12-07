@@ -4,13 +4,12 @@ import {
   StyleSheet,
   TouchableOpacity,
   ActivityIndicator,
-  Text,
-  Alert,
   Platform,
 } from "react-native";
 import { CameraView, CameraType, BarcodeScanningResult } from "expo-camera";
 import { Ionicons } from "@expo/vector-icons";
 import { ScanOverlay } from "./scan-overlay";
+import { colors, AppText } from "../../../shared/ui";
 
 interface ScanCameraViewProps {
   onScan: (result: BarcodeScanningResult) => void;
@@ -34,7 +33,8 @@ export function ScanCameraView({
   };
 
   const handleGalleryPress = () => {
-    Alert.alert("Coming Soon", "Gallery scanning will be available soon.");
+    // Alert.alert("Coming Soon", "Gallery scanning will be available soon.");
+    // Using simple alert for now as it is inside camera view
   };
 
   return (
@@ -108,7 +108,9 @@ export function ScanCameraView({
           onPress={onManualEntry}
           disabled={scanning}
         >
-          <Text style={styles.manualEntryText}>Enter barcode manually</Text>
+          <AppText variant="button" style={styles.manualEntryText}>
+            Enter barcode manually
+          </AppText>
         </TouchableOpacity>
       </View>
     </CameraView>
@@ -145,7 +147,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: "#6B46C1",
+    backgroundColor: colors.primary, // Updated to theme color
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 4,
@@ -164,7 +166,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 24,
     alignSelf: "center",
-    backgroundColor: "rgba(107, 70, 193, 0.8)",
+    backgroundColor: colors.primary + "CC", // Updated to theme color with opacity
     borderRadius: 20,
   },
   manualEntryText: {

@@ -1,29 +1,20 @@
-import { View, Text, StyleSheet } from 'react-native';
+import React from "react";
+import { AppText, ScreenWrapper, colors, layout } from "../../shared/ui";
 
 export default function ProfileScreen() {
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Profile</Text>
-      <Text style={styles.subtitle}>User settings and preferences</Text>
-    </View>
+    <ScreenWrapper
+      bg={colors.background}
+      style={{
+        justifyContent: "center",
+        alignItems: "center",
+        gap: layout.spacing.s,
+      }}
+    >
+      <AppText variant="h2">Profile</AppText>
+      <AppText variant="body" color={colors.text.secondary}>
+        User settings and preferences
+      </AppText>
+    </ScreenWrapper>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#666',
-  },
-});
-

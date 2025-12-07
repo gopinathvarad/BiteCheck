@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import {
   View,
-  Text,
   StyleSheet,
   TouchableOpacity,
   Alert,
@@ -9,6 +8,7 @@ import {
   Modal,
   ScrollView,
   Platform,
+  Image,
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useCameraPermissions, BarcodeScanningResult } from "expo-camera";
@@ -19,6 +19,15 @@ import { scanProduct } from "../../features/scan/api/scan-api";
 import { Product } from "../../entities/product/model/types";
 import { ScanCameraView } from "../../features/scan/ui/scan-camera-view";
 import { ManualBarcodeEntry } from "../../features/scan/ui/manual-barcode-entry";
+import {
+  AppText,
+  AppButton,
+  AppCard,
+  StatusBadge,
+  colors,
+  layout,
+  shadows,
+} from "../../shared/ui";
 
 export default function ScanScreen() {
   const [permission, requestPermission] = useCameraPermissions();
@@ -84,34 +93,7 @@ export default function ScanScreen() {
   };
 
   const handleManualEntry = () => {
-    if (Platform.OS === "ios") {
-      // iOS: Use native Alert.prompt for better UX
-      Alert.prompt(
-        "Enter Barcode",
-        "Type the barcode number manually",
-        [
-          {
-            text: "Cancel",
-            style: "cancel",
-            onPress: () => {},
-          },
-          {
-            text: "Scan",
-            onPress: (barcode) => {
-              if (barcode && barcode.trim()) {
-                setScanned(true);
-                setScanning(true);
-                scanMutation.mutate({ code: barcode.trim() });
-              }
-            },
-          },
-        ],
-        "plain-text"
-      );
-    } else {
-      // Android: Show custom modal with TextInput
-      setShowManualEntryModal(true);
-    }
+    setShowManualEntryModal(true);
   };
 
   const handleManualScan = (code: string) => {
@@ -129,11 +111,11 @@ export default function ScanScreen() {
 
   if (!permission) {
     return (
-      <View style={styles.container}>
-        <ActivityIndicator size="large" color="#6B46C1" />
-        <Text style={styles.permissionText}>
+      <View style={styles.permissionContainer}>
+        <ActivityIndicator size="large" color={colors.primary} />
+        <AppText style={styles.permissionText}>
           Requesting camera permission...
-        </Text>
+        </AppText>
         <StatusBar style="auto" />
       </View>
     );
@@ -141,18 +123,19 @@ export default function ScanScreen() {
 
   if (!permission.granted) {
     return (
-      <View style={styles.container}>
-        <Ionicons name="camera-outline" size={64} color="#6B46C1" />
-        <Text style={styles.permissionTitle}>Camera Permission Required</Text>
-        <Text style={styles.permissionText}>
+      <View style={styles.permissionContainer}>
+        <Ionicons name="camera-outline" size={64} color={colors.primary} />
+        <AppText variant="h2" style={styles.permissionTitle}>
+          Camera Permission
+        </AppText>
+        <AppText style={styles.permissionText}>
           BiteCheck needs access to your camera to scan product barcodes.
-        </Text>
-        <TouchableOpacity
-          style={styles.permissionButton}
+        </AppText>
+        <AppButton
+          title="Grant Permission"
           onPress={requestPermission}
-        >
-          <Text style={styles.permissionButtonText}>Grant Permission</Text>
-        </TouchableOpacity>
+          style={{ marginTop: layout.spacing.xl }}
+        />
         <StatusBar style="auto" />
       </View>
     );
@@ -178,116 +161,146 @@ export default function ScanScreen() {
       >
         <View style={styles.modalContainer}>
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Product Details</Text>
+            <AppText variant="h3">Product Details</AppText>
             <TouchableOpacity onPress={handleProductClose}>
-              <Ionicons name="close" size={28} color="#000" />
+              <Ionicons name="close" size={24} color={colors.text.primary} />
             </TouchableOpacity>
           </View>
 
           {product && (
-            <ScrollView style={styles.modalContent}>
+            <ScrollView
+              style={styles.modalContent}
+              contentContainerStyle={{ paddingBottom: 40 }}
+            >
+              {/* Product Header */}
               <View style={styles.productHeader}>
-                <Text style={styles.productName}>{product.name}</Text>
-                {product.brand && (
-                  <Text style={styles.productBrand}>{product.brand}</Text>
-                )}
-                {product.barcode && (
-                  <Text style={styles.productBarcode}>
-                    Barcode: {product.barcode}
-                  </Text>
-                )}
-              </View>
-
-              {product.health_score !== undefined && (
-                <View style={styles.healthScoreContainer}>
-                  <Text style={styles.healthScoreLabel}>Health Score</Text>
-                  <View style={styles.healthScoreBar}>
-                    <View
-                      style={[
-                        styles.healthScoreFill,
-                        { width: `${product.health_score}%` },
-                      ]}
+                <View style={styles.imagePlaceholder}>
+                  {product.images && product.images.length > 0 ? (
+                    <Image
+                      source={{ uri: product.images[0] }}
+                      style={styles.productImage}
+                      resizeMode="contain"
                     />
-                  </View>
-                  <Text style={styles.healthScoreValue}>
-                    {String(product.health_score)}/100
-                  </Text>
-                </View>
-              )}
-
-              {product.nutrition && (
-                <View style={styles.section}>
-                  <Text style={styles.sectionTitle}>Nutrition (per 100g)</Text>
-                  {product.nutrition.per_100g && (
-                    <View style={styles.nutritionGrid}>
-                      {product.nutrition.per_100g.energy_kcal !== undefined &&
-                        product.nutrition.per_100g.energy_kcal !== null && (
-                          <View style={styles.nutritionItem}>
-                            <Text style={styles.nutritionLabel}>Calories</Text>
-                            <Text style={styles.nutritionValue}>
-                              {String(product.nutrition.per_100g.energy_kcal)}{" "}
-                              kcal
-                            </Text>
-                          </View>
-                        )}
-                      {product.nutrition.per_100g.proteins !== undefined &&
-                        product.nutrition.per_100g.proteins !== null && (
-                          <View style={styles.nutritionItem}>
-                            <Text style={styles.nutritionLabel}>Protein</Text>
-                            <Text style={styles.nutritionValue}>
-                              {String(product.nutrition.per_100g.proteins)}g
-                            </Text>
-                          </View>
-                        )}
-                      {product.nutrition.per_100g.carbohydrates !== undefined &&
-                        product.nutrition.per_100g.carbohydrates !== null && (
-                          <View style={styles.nutritionItem}>
-                            <Text style={styles.nutritionLabel}>Carbs</Text>
-                            <Text style={styles.nutritionValue}>
-                              {String(product.nutrition.per_100g.carbohydrates)}
-                              g
-                            </Text>
-                          </View>
-                        )}
-                      {product.nutrition.per_100g.fat !== undefined &&
-                        product.nutrition.per_100g.fat !== null && (
-                          <View style={styles.nutritionItem}>
-                            <Text style={styles.nutritionLabel}>Fat</Text>
-                            <Text style={styles.nutritionValue}>
-                              {String(product.nutrition.per_100g.fat)}g
-                            </Text>
-                          </View>
-                        )}
-                    </View>
+                  ) : (
+                    <Ionicons
+                      name="image-outline"
+                      size={48}
+                      color={colors.text.tertiary}
+                    />
                   )}
                 </View>
-              )}
+                <AppText variant="h2">{product.name}</AppText>
+                {product.brand && (
+                  <AppText variant="body" color={colors.text.secondary}>
+                    {product.brand}
+                  </AppText>
+                )}
 
-              {product.allergens && product.allergens.length > 0 && (
+                {/* Health Score & Allergens Summary */}
+                <View style={styles.badgesContainer}>
+                  {product.health_score !== undefined && (
+                    <StatusBadge
+                      status={
+                        product.health_score > 70
+                          ? "safe"
+                          : product.health_score > 40
+                          ? "neutral"
+                          : "warning"
+                      }
+                      text={`Score: ${product.health_score}/100`}
+                      icon="heart"
+                    />
+                  )}
+                  {product.allergens && product.allergens.length > 0 ? (
+                    <StatusBadge
+                      status="warning"
+                      text="Contains Allergens"
+                      icon="warning"
+                    />
+                  ) : (
+                    <StatusBadge
+                      status="safe"
+                      text="No Allergens Found"
+                      icon="checkmark-circle"
+                    />
+                  )}
+                </View>
+              </View>
+
+              {/* Nutrition Section */}
+              {product.nutrition && product.nutrition.per_100g && (
                 <View style={styles.section}>
-                  <Text style={styles.sectionTitle}>Allergens</Text>
-                  <View style={styles.allergenList}>
-                    {product.allergens.map((allergen, index) => (
-                      <View key={index} style={styles.allergenTag}>
-                        <Text style={styles.allergenText}>{allergen}</Text>
-                      </View>
-                    ))}
+                  <AppText variant="h3" style={styles.sectionTitle}>
+                    Nutrition (per 100g)
+                  </AppText>
+
+                  <View style={styles.nutritionGrid}>
+                    <AppCard style={styles.nutritionCard}>
+                      <AppText variant="caption" color={colors.text.secondary}>
+                        Calories
+                      </AppText>
+                      <AppText variant="h3">
+                        {product.nutrition.per_100g.energy_kcal || "-"}
+                      </AppText>
+                      <AppText variant="caption" color={colors.text.tertiary}>
+                        kcal
+                      </AppText>
+                    </AppCard>
+
+                    <AppCard style={styles.nutritionCard}>
+                      <AppText variant="caption" color={colors.text.secondary}>
+                        Protein
+                      </AppText>
+                      <AppText variant="h3">
+                        {product.nutrition.per_100g.proteins || "-"}
+                      </AppText>
+                      <AppText variant="caption" color={colors.text.tertiary}>
+                        g
+                      </AppText>
+                    </AppCard>
+
+                    <AppCard style={styles.nutritionCard}>
+                      <AppText variant="caption" color={colors.text.secondary}>
+                        Carbs
+                      </AppText>
+                      <AppText variant="h3">
+                        {product.nutrition.per_100g.carbohydrates || "-"}
+                      </AppText>
+                      <AppText variant="caption" color={colors.text.tertiary}>
+                        g
+                      </AppText>
+                    </AppCard>
+
+                    <AppCard style={styles.nutritionCard}>
+                      <AppText variant="caption" color={colors.text.secondary}>
+                        Fat
+                      </AppText>
+                      <AppText variant="h3">
+                        {product.nutrition.per_100g.fat || "-"}
+                      </AppText>
+                      <AppText variant="caption" color={colors.text.tertiary}>
+                        g
+                      </AppText>
+                    </AppCard>
                   </View>
                 </View>
               )}
 
+              {/* Ingredients Section */}
               {product.ingredients_raw && (
-                <View style={styles.section}>
-                  <Text style={styles.sectionTitle}>Ingredients</Text>
-                  <Text style={styles.ingredientsText}>
+                <AppCard style={styles.section}>
+                  <AppText variant="h3" style={styles.sectionTitle}>
+                    Ingredients
+                  </AppText>
+                  <AppText variant="body" style={{ lineHeight: 24 }}>
                     {product.ingredients_raw}
-                  </Text>
-                </View>
+                  </AppText>
+                </AppCard>
               )}
 
               <View style={styles.modalActions}>
-                <TouchableOpacity
-                  style={styles.actionButton}
+                <AppButton
+                  title="View Full Details"
                   onPress={() => {
                     if (product?.id) {
                       handleProductClose();
@@ -296,16 +309,21 @@ export default function ScanScreen() {
                       Alert.alert("Error", "Product ID not available");
                     }
                   }}
-                >
-                  <Text style={styles.actionButtonText}>View Full Details</Text>
-                </TouchableOpacity>
+                  icon={
+                    <Ionicons
+                      name="document-text-outline"
+                      size={20}
+                      color={colors.text.inverted}
+                    />
+                  }
+                />
               </View>
             </ScrollView>
           )}
         </View>
       </Modal>
 
-      {/* Manual Entry Modal (Android) */}
+      {/* Manual Entry Modal */}
       <ManualBarcodeEntry
         visible={showManualEntryModal}
         onClose={() => setShowManualEntryModal(false)}
@@ -320,165 +338,83 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#000",
   },
-  permissionText: {
-    fontSize: 16,
-    color: "#666",
-    textAlign: "center",
-    marginTop: 16,
-    paddingHorizontal: 40,
+  permissionContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: layout.spacing.xl,
+    backgroundColor: colors.background,
   },
   permissionTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#000",
-    marginTop: 24,
-    marginBottom: 8,
+    marginTop: layout.spacing.l,
+    marginBottom: layout.spacing.s,
+    textAlign: "center",
   },
-  permissionButton: {
-    marginTop: 32,
-    paddingVertical: 14,
-    paddingHorizontal: 32,
-    backgroundColor: "#6B46C1",
-    borderRadius: 25,
-  },
-  permissionButtonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "600",
+  permissionText: {
+    color: colors.text.secondary,
+    textAlign: "center",
+    marginBottom: layout.spacing.l,
   },
   // Modal Styles
   modalContainer: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: colors.background,
   },
   modalHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: 20,
+    padding: layout.spacing.l,
     borderBottomWidth: 1,
-    borderBottomColor: "#e0e0e0",
-  },
-  modalTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#000",
+    borderBottomColor: colors.border,
+    backgroundColor: colors.card,
   },
   modalContent: {
     flex: 1,
-    padding: 20,
+    padding: layout.spacing.l,
   },
   productHeader: {
-    marginBottom: 24,
+    marginBottom: layout.spacing.xl,
+    alignItems: "center",
   },
-  productName: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: "#000",
-    marginBottom: 8,
+  imagePlaceholder: {
+    width: 120,
+    height: 120,
+    backgroundColor: colors.action.hover,
+    borderRadius: layout.borderRadius.l,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: layout.spacing.m,
   },
-  productBrand: {
-    fontSize: 18,
-    color: "#666",
-    marginBottom: 4,
-  },
-  productBarcode: {
-    fontSize: 14,
-    color: "#999",
-  },
-  healthScoreContainer: {
-    marginBottom: 24,
-    padding: 16,
-    backgroundColor: "#f5f5f5",
-    borderRadius: 12,
-  },
-  healthScoreLabel: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#000",
-    marginBottom: 8,
-  },
-  healthScoreBar: {
-    height: 8,
-    backgroundColor: "#e0e0e0",
-    borderRadius: 4,
-    overflow: "hidden",
-    marginBottom: 8,
-  },
-  healthScoreFill: {
+  productImage: {
+    width: "100%",
     height: "100%",
-    backgroundColor: "#6B46C1",
+    borderRadius: layout.borderRadius.l,
   },
-  healthScoreValue: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#6B46C1",
+  badgesContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: layout.spacing.s,
+    marginTop: layout.spacing.m,
+    justifyContent: "center",
   },
   section: {
-    marginBottom: 24,
+    marginBottom: layout.spacing.l,
   },
   sectionTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#000",
-    marginBottom: 12,
+    marginBottom: layout.spacing.m,
   },
   nutritionGrid: {
     flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 12,
+    gap: layout.spacing.s,
   },
-  nutritionItem: {
+  nutritionCard: {
     flex: 1,
-    minWidth: "45%",
-    padding: 12,
-    backgroundColor: "#f5f5f5",
-    borderRadius: 8,
-  },
-  nutritionLabel: {
-    fontSize: 14,
-    color: "#666",
-    marginBottom: 4,
-  },
-  nutritionValue: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#000",
-  },
-  allergenList: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  allergenTag: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    backgroundColor: "#ffebee",
-    borderRadius: 16,
-  },
-  allergenText: {
-    fontSize: 14,
-    color: "#c62828",
-    fontWeight: "500",
-  },
-  ingredientsText: {
-    fontSize: 16,
-    color: "#444",
-    lineHeight: 24,
+    alignItems: "center",
+    paddingVertical: layout.spacing.m,
+    paddingHorizontal: layout.spacing.s,
   },
   modalActions: {
-    marginTop: 24,
-    marginBottom: 40,
-  },
-  actionButton: {
-    backgroundColor: "#6B46C1",
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: "center",
-  },
-  actionButtonText: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "bold",
+    marginTop: layout.spacing.l,
   },
 });
