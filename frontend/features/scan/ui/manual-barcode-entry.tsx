@@ -17,7 +17,7 @@ import {
   ScreenWrapper,
   colors,
   layout,
-} from "../../../shared/ui";
+} from "@/shared/ui";
 
 interface ManualBarcodeEntryProps {
   visible: boolean;
