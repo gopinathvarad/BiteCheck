@@ -1,19 +1,46 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
-import { Product } from '../../../entities/product/model/types';
+import React from "react";
+import { View, Text, StyleSheet } from "react-native";
+import { Product } from "../../../entities/product/model/types";
+import { colors, layout, typography, textVariants } from "../../../shared/ui";
 
 interface IngredientsSectionProps {
   product: Product;
 }
 
 export function IngredientsSection({ product }: IngredientsSectionProps) {
-  const hasIngredients = product.ingredients_raw || (product.ingredients_parsed && product.ingredients_parsed.length > 0);
+  // Parse ingredients if not already parsed
+  const getIngredients = () => {
+    let ingList: string[] = [];
 
-  if (!hasIngredients) {
+    // Try using the pre-parsed list if it looks good (more than 1 item)
+    if (product.ingredients_parsed && product.ingredients_parsed.length > 1) {
+      ingList = product.ingredients_parsed;
+    }
+    // Fallback to raw string parsing
+    else if (product.ingredients_raw) {
+      // Split by common delimiters: comma, bullet points, newlines
+      ingList = product.ingredients_raw
+        .split(/,|\n|•|·/)
+        .map((i) => i.trim())
+        .filter((i) => i.length > 0);
+    }
+
+    // Clean up ingredients: remove trailing periods, capitalize first letter
+    return ingList.map((ing) => {
+      let clean = ing.replace(/\.$/, "");
+      return clean.charAt(0).toUpperCase() + clean.slice(1);
+    });
+  };
+
+  const ingredients = getIngredients();
+
+  if (ingredients.length === 0) {
     return (
       <View style={styles.container}>
         <Text style={styles.sectionTitle}>Ingredients</Text>
-        <Text style={styles.noDataText}>Ingredients information not available</Text>
+        <Text style={styles.noDataText}>
+          Ingredients information not available
+        </Text>
       </View>
     );
   }
@@ -21,67 +48,60 @@ export function IngredientsSection({ product }: IngredientsSectionProps) {
   return (
     <View style={styles.container}>
       <Text style={styles.sectionTitle}>Ingredients</Text>
-      {product.ingredients_parsed && product.ingredients_parsed.length > 0 ? (
-        <View style={styles.parsedContainer}>
-          {product.ingredients_parsed.map((ingredient, index) => (
-            <View key={index} style={styles.ingredientItem}>
-              <View style={styles.bullet} />
-              <Text style={styles.ingredientText}>{ingredient}</Text>
-            </View>
-          ))}
-        </View>
-      ) : (
-        <Text style={styles.rawText}>{product.ingredients_raw}</Text>
-      )}
+      <View style={styles.listContainer}>
+        {ingredients.map((ingredient, index) => (
+          <View key={index} style={styles.listItem}>
+            <View style={styles.bulletPoint} />
+            <Text style={styles.listItemText}>{ingredient}</Text>
+          </View>
+        ))}
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#fff',
-    padding: 20,
-    marginTop: 8,
-    borderTopWidth: 1,
-    borderBottomWidth: 1,
-    borderColor: '#f0f0f0',
+    backgroundColor: colors.card,
+    borderRadius: layout.borderRadius.l,
+    padding: layout.spacing.l,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#1a1a1a',
-    marginBottom: 16,
+    ...textVariants.h3,
+    marginBottom: layout.spacing.m,
+    color: colors.text.primary,
   },
-  parsedContainer: {
-    gap: 8,
+  listContainer: {
+    gap: layout.spacing.s,
   },
-  ingredientItem: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
+  listItem: {
+    flexDirection: "row",
+    alignItems: "flex-start",
   },
-  bullet: {
+  bulletPoint: {
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#6B46C1',
-    marginTop: 8,
+    backgroundColor: colors.primary,
+    marginTop: 8, // Align with the text effectively
     marginRight: 12,
+    opacity: 0.7,
   },
-  ingredientText: {
+  listItemText: {
     flex: 1,
     fontSize: 15,
-    color: '#333',
     lineHeight: 22,
-  },
-  rawText: {
-    fontSize: 15,
-    color: '#333',
-    lineHeight: 22,
+    color: colors.text.primary,
+    fontWeight: "400",
   },
   noDataText: {
-    fontSize: 14,
-    color: '#999',
-    fontStyle: 'italic',
+    fontSize: 15,
+    color: colors.text.tertiary,
+    fontStyle: "italic",
   },
 });
-

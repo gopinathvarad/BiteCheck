@@ -1,19 +1,22 @@
-import { Stack } from 'expo-router';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useState } from 'react';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { AuthProvider } from '../features/auth/lib/auth-context';
-import { AuthGuard } from '../features/auth/lib/auth-guard';
+import { Stack } from "expo-router";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { useState } from "react";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+import { AuthProvider } from "../features/auth/lib/auth-context";
+import { AuthGuard } from "../features/auth/lib/auth-guard";
 
 export default function RootLayout() {
-  const [queryClient] = useState(() => new QueryClient({
-    defaultOptions: {
-      queries: {
-        staleTime: 60 * 1000, // 1 minute
-        retry: 1,
-      },
-    },
-  }));
+  const [queryClient] = useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: {
+            staleTime: 60 * 1000, // 1 minute
+            retry: 1,
+          },
+        },
+      })
+  );
 
   return (
     <SafeAreaProvider>
@@ -23,7 +26,14 @@ export default function RootLayout() {
             <Stack>
               <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
               <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-              <Stack.Screen name="product/[id]" options={{ headerShown: false }} />
+              <Stack.Screen
+                name="product/[id]"
+                options={{
+                  headerShown: false,
+                  gestureEnabled: true,
+                  fullScreenGestureEnabled: true, // Allows swipe from anywhere on the screen, not just edge
+                }}
+              />
             </Stack>
           </AuthGuard>
         </AuthProvider>
@@ -31,4 +41,3 @@ export default function RootLayout() {
     </SafeAreaProvider>
   );
 }
-

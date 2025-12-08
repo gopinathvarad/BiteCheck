@@ -71,7 +71,10 @@ export function ManualBarcodeEntry({
 
             <Input
               value={manualBarcode}
-              onChangeText={setManualBarcode}
+              onChangeText={(text) => {
+                const numericText = text.replace(/[^0-9]/g, "");
+                setManualBarcode(numericText);
+              }}
               placeholder="e.g. 1234567890123"
               keyboardType="numeric"
               returnKeyType="done"

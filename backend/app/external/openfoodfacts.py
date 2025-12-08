@@ -24,17 +24,23 @@ class OpenFoodFactsClient:
             Product object or None if not found
         """
         try:
-            async with httpx.AsyncClient(timeout=self.timeout) as client:
+            headers = {
+                "User-Agent": "BiteCheck/1.0 (Integration Test)",
+                "Accept": "application/json"
+            }
+            async with httpx.AsyncClient(timeout=self.timeout, headers=headers) as client:
                 url = f"{self.base_url}/product/{barcode}.json"
                 response = await client.get(url)
                 
                 if response.status_code == 404:
+                    print(f"OFF returned 404 for barcode: {barcode}")
                     return None
                 
                 response.raise_for_status()
                 data = response.json()
                 
                 if data.get("status") == 0:
+                    print(f"OFF returned status 0 for {barcode}: {data.get('status_verbose')}")
                     return None
                 
                 product_data = data.get("product", {})
