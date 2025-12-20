@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   ScrollView,
@@ -6,12 +6,15 @@ import {
   StyleSheet,
   ActivityIndicator,
   Alert,
+  BackHandler,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect } from "expo-router";
 import {
   AppText,
   ScreenWrapper,
   AppCard,
+  PreferencesSection,
   colors,
   layout,
 } from "../../shared/ui";
@@ -22,72 +25,6 @@ import {
   COMMON_DIETS,
 } from "../../features/user/index";
 
-// Chip component for allergen/diet selection
-function SelectionChip({
-  label,
-  selected,
-  onPress,
-  variant = "default",
-}: {
-  label: string;
-  selected: boolean;
-  onPress: () => void;
-  variant?: "default" | "allergen" | "diet";
-}) {
-  const getColors = () => {
-    if (!selected) {
-      return {
-        bg: colors.card,
-        border: colors.border,
-        text: colors.text.secondary,
-      };
-    }
-    switch (variant) {
-      case "allergen":
-        return { bg: "#fef2f2", border: "#ef4444", text: "#dc2626" };
-      case "diet":
-        return { bg: "#f0fdf4", border: "#22c55e", text: "#16a34a" };
-      default:
-        return {
-          bg: colors.primaryLight,
-          border: colors.primary,
-          text: colors.primary,
-        };
-    }
-  };
-
-  const chipColors = getColors();
-
-  return (
-    <TouchableOpacity
-      onPress={onPress}
-      style={[
-        styles.chip,
-        {
-          backgroundColor: chipColors.bg,
-          borderColor: chipColors.border,
-        },
-      ]}
-      activeOpacity={0.7}
-    >
-      {selected && (
-        <Ionicons
-          name="checkmark-circle"
-          size={16}
-          color={chipColors.text}
-          style={styles.chipIcon}
-        />
-      )}
-      <AppText
-        variant="caption"
-        style={[styles.chipText, { color: chipColors.text }]}
-      >
-        {label}
-      </AppText>
-    </TouchableOpacity>
-  );
-}
-
 export default function ProfileScreen() {
   const { user, signOut, loading: authLoading } = useAuth();
   const {
@@ -97,60 +34,114 @@ export default function ProfileScreen() {
     error,
     allergies,
     diets,
+    customAllergies,
+    customDiets,
+    hasUnsavedChanges,
     toggleAllergy,
     toggleDiet,
+    addCustomAllergy,
+    addCustomDiet,
+    removeCustomAllergy,
+    removeCustomDiet,
+    clearAllAllergies,
+    clearAllDiets,
     savePreferences,
+    resetChanges,
   } = useUserPreferences();
 
-  const [hasChanges, setHasChanges] = useState(false);
+  const [showSaveSuccess, setShowSaveSuccess] = useState(false);
 
-  // Check if an allergy is selected (case-insensitive)
-  const isAllergySelected = (allergy: string) =>
-    allergies.some((a) => a.toLowerCase() === allergy.toLowerCase());
+  // Handle back button with unsaved changes warning
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => {
+        if (hasUnsavedChanges) {
+          showDiscardAlert();
+          return true;
+        }
+        return false;
+      };
 
-  // Check if a diet is selected (case-insensitive)
-  const isDietSelected = (diet: string) =>
-    diets.some((d) => d.toLowerCase() === diet.toLowerCase());
+      const subscription = BackHandler.addEventListener(
+        "hardwareBackPress",
+        onBackPress
+      );
 
-  // Handle allergy toggle
-  const handleAllergyToggle = (allergy: string) => {
-    toggleAllergy(allergy);
-    setHasChanges(true);
+      return () => subscription.remove();
+    }, [hasUnsavedChanges])
+  );
+
+  // Show discard changes alert
+  const showDiscardAlert = () => {
+    Alert.alert(
+      "Unsaved Changes",
+      "You have unsaved changes. What would you like to do?",
+      [
+        {
+          text: "Discard",
+          style: "destructive",
+          onPress: resetChanges,
+        },
+        {
+          text: "Save",
+          onPress: handleSave,
+        },
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+      ]
+    );
   };
 
-  // Handle diet toggle
-  const handleDietToggle = (diet: string) => {
-    toggleDiet(diet);
-    setHasChanges(true);
-  };
-
-  // Handle save
+  // Handle save with success animation
   const handleSave = async () => {
     const success = await savePreferences();
     if (success) {
-      setHasChanges(false);
-      Alert.alert("Success", "Your preferences have been saved!");
+      setShowSaveSuccess(true);
+      setTimeout(() => setShowSaveSuccess(false), 2000);
     } else {
       Alert.alert("Error", error || "Failed to save preferences");
     }
   };
 
-  // Handle sign out
+  // Handle sign out with unsaved changes check
   const handleSignOut = async () => {
+    if (hasUnsavedChanges) {
+      Alert.alert(
+        "Unsaved Changes",
+        "You have unsaved changes that will be lost. Sign out anyway?",
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Sign Out",
+            style: "destructive",
+            onPress: performSignOut,
+          },
+        ]
+      );
+    } else {
+      showSignOutConfirmation();
+    }
+  };
+
+  const showSignOutConfirmation = () => {
     Alert.alert("Sign Out", "Are you sure you want to sign out?", [
       { text: "Cancel", style: "cancel" },
       {
         text: "Sign Out",
         style: "destructive",
-        onPress: async () => {
-          try {
-            await signOut();
-          } catch (err) {
-            console.error("Error signing out:", err);
-          }
-        },
+        onPress: performSignOut,
       },
     ]);
+  };
+
+  const performSignOut = async () => {
+    try {
+      await signOut();
+    } catch (err) {
+      console.error("Error signing out:", err);
+    }
   };
 
   // If not authenticated, show sign in prompt
@@ -196,7 +187,7 @@ export default function ProfileScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* User Info Section */}
-        <AppCard style={styles.section}>
+        <AppCard style={styles.userSection}>
           <View style={styles.userHeader}>
             <View style={styles.avatarContainer}>
               <Ionicons name="person" size={32} color={colors.primary} />
@@ -211,83 +202,41 @@ export default function ProfileScreen() {
         </AppCard>
 
         {/* Allergies Section */}
-        <AppCard style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Ionicons name="warning" size={20} color="#ef4444" />
-            <AppText variant="h3" style={styles.sectionTitle}>
-              Allergies
-            </AppText>
-          </View>
-          <AppText
-            variant="caption"
-            color={colors.text.secondary}
-            style={styles.sectionDescription}
-          >
-            Select any allergens you need to avoid. Products containing these
-            will be highlighted.
-          </AppText>
-          <View style={styles.chipsContainer}>
-            {COMMON_ALLERGENS.map((allergen) => (
-              <SelectionChip
-                key={allergen}
-                label={allergen}
-                selected={isAllergySelected(allergen)}
-                onPress={() => handleAllergyToggle(allergen)}
-                variant="allergen"
-              />
-            ))}
-          </View>
-          {allergies.length > 0 && (
-            <AppText
-              variant="caption"
-              color={colors.text.tertiary}
-              style={styles.selectedCount}
-            >
-              {allergies.length} allergen{allergies.length !== 1 ? "s" : ""}{" "}
-              selected
-            </AppText>
-          )}
-        </AppCard>
+        <PreferencesSection
+          title="Allergies"
+          description="Select any allergens you need to avoid. Products containing these will be highlighted."
+          icon="warning"
+          iconColor="#ef4444"
+          variant="allergen"
+          items={COMMON_ALLERGENS}
+          selectedItems={allergies}
+          customItems={customAllergies}
+          onToggleItem={toggleAllergy}
+          onAddCustom={addCustomAllergy}
+          onRemoveCustom={removeCustomAllergy}
+          onClearAll={clearAllAllergies}
+          customInputPlaceholder="Add custom allergen..."
+        />
 
         {/* Diets Section */}
-        <AppCard style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Ionicons name="leaf" size={20} color="#22c55e" />
-            <AppText variant="h3" style={styles.sectionTitle}>
-              Diet Preferences
-            </AppText>
-          </View>
-          <AppText
-            variant="caption"
-            color={colors.text.secondary}
-            style={styles.sectionDescription}
-          >
-            Select your dietary preferences to help filter products.
-          </AppText>
-          <View style={styles.chipsContainer}>
-            {COMMON_DIETS.map((diet) => (
-              <SelectionChip
-                key={diet}
-                label={diet}
-                selected={isDietSelected(diet)}
-                onPress={() => handleDietToggle(diet)}
-                variant="diet"
-              />
-            ))}
-          </View>
-          {diets.length > 0 && (
-            <AppText
-              variant="caption"
-              color={colors.text.tertiary}
-              style={styles.selectedCount}
-            >
-              {diets.length} diet{diets.length !== 1 ? "s" : ""} selected
-            </AppText>
-          )}
-        </AppCard>
+        <PreferencesSection
+          title="Diets"
+          description="Select your dietary preferences to help filter and personalize product recommendations."
+          icon="leaf"
+          iconColor="#22c55e"
+          variant="diet"
+          items={COMMON_DIETS}
+          selectedItems={diets}
+          customItems={customDiets}
+          onToggleItem={toggleDiet}
+          onAddCustom={addCustomDiet}
+          onRemoveCustom={removeCustomDiet}
+          onClearAll={clearAllDiets}
+          customInputPlaceholder="Add custom diet..."
+        />
 
-        {/* Save Button */}
-        {hasChanges && (
+        {/* Save Button - Always visible when there are changes */}
+        {hasUnsavedChanges && (
           <TouchableOpacity
             style={[styles.saveButton, saving && styles.saveButtonDisabled]}
             onPress={handleSave}
@@ -312,6 +261,16 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         )}
 
+        {/* Success Message */}
+        {showSaveSuccess && (
+          <View style={styles.successContainer}>
+            <Ionicons name="checkmark-circle" size={20} color="#16a34a" />
+            <AppText variant="body" style={styles.successText}>
+              Preferences saved successfully!
+            </AppText>
+          </View>
+        )}
+
         {/* Error Message */}
         {error && (
           <View style={styles.errorContainer}>
@@ -320,6 +279,25 @@ export default function ProfileScreen() {
               {error}
             </AppText>
           </View>
+        )}
+
+        {/* Discard Changes Button */}
+        {hasUnsavedChanges && (
+          <TouchableOpacity
+            style={styles.discardButton}
+            onPress={showDiscardAlert}
+            activeOpacity={0.7}
+          >
+            <Ionicons
+              name="refresh-outline"
+              size={20}
+              color={colors.text.secondary}
+              style={styles.buttonIcon}
+            />
+            <AppText variant="button" style={styles.discardButtonText}>
+              Discard Changes
+            </AppText>
+          </TouchableOpacity>
         )}
 
         {/* Sign Out Button */}
@@ -367,10 +345,10 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: layout.spacing.m,
-    gap: layout.spacing.m,
   },
-  section: {
+  userSection: {
     padding: layout.spacing.l,
+    marginBottom: layout.spacing.m,
   },
   userHeader: {
     flexDirection: "row",
@@ -389,42 +367,6 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 2,
   },
-  sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: layout.spacing.s,
-    marginBottom: layout.spacing.xs,
-  },
-  sectionTitle: {
-    flex: 1,
-  },
-  sectionDescription: {
-    marginBottom: layout.spacing.m,
-    lineHeight: 18,
-  },
-  chipsContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: layout.spacing.s,
-  },
-  chip: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1.5,
-  },
-  chipIcon: {
-    marginRight: 4,
-  },
-  chipText: {
-    fontWeight: "500",
-  },
-  selectedCount: {
-    marginTop: layout.spacing.m,
-    fontStyle: "italic",
-  },
   saveButton: {
     flexDirection: "row",
     alignItems: "center",
@@ -434,6 +376,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     borderRadius: layout.borderRadius.m,
     gap: layout.spacing.s,
+    marginBottom: layout.spacing.m,
   },
   saveButtonDisabled: {
     opacity: 0.7,
@@ -445,6 +388,20 @@ const styles = StyleSheet.create({
   buttonIcon: {
     marginRight: 4,
   },
+  successContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: layout.spacing.s,
+    padding: layout.spacing.m,
+    backgroundColor: "#f0fdf4",
+    borderRadius: layout.borderRadius.m,
+    marginBottom: layout.spacing.m,
+  },
+  successText: {
+    color: "#16a34a",
+    fontWeight: "500",
+  },
   errorContainer: {
     flexDirection: "row",
     alignItems: "center",
@@ -452,10 +409,27 @@ const styles = StyleSheet.create({
     padding: layout.spacing.m,
     backgroundColor: "#fef2f2",
     borderRadius: layout.borderRadius.m,
+    marginBottom: layout.spacing.m,
   },
   errorText: {
     color: "#dc2626",
     flex: 1,
+  },
+  discardButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: layout.borderRadius.m,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.card,
+    marginBottom: layout.spacing.m,
+  },
+  discardButtonText: {
+    color: colors.text.secondary,
+    fontWeight: "500",
   },
   signOutButton: {
     flexDirection: "row",
@@ -467,7 +441,6 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: "#dc2626",
     backgroundColor: "#fef2f2",
-    marginTop: layout.spacing.m,
   },
   signOutText: {
     color: "#dc2626",
