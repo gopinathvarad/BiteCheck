@@ -27,12 +27,44 @@ import {
   layout,
 } from "../../shared/ui";
 import { useUserPreferences } from "../../features/user";
+import { useFavoriteStatus, useToggleFavorite } from "../../features/favorites";
+import { useAuth } from "../../features/auth/lib/auth-context";
 
 export default function ProductDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const { user } = useAuth();
   const { data, isLoading, error, refetch } = useProduct(id);
   const { allergies: userAllergies } = useUserPreferences();
+
+  // Favorites hooks
+  const { data: favoriteData } = useFavoriteStatus(id);
+  const { toggle: toggleFavorite, isLoading: isTogglingFavorite } =
+    useToggleFavorite();
+
+  const isFavorite = favoriteData?.isFavorite ?? false;
+
+  const handleToggleFavorite = async () => {
+    if (!user) {
+      Alert.alert(
+        "Sign In Required",
+        "Please sign in to save your favorite products.",
+        [
+          { text: "Cancel", style: "cancel" },
+          { text: "Sign In", onPress: () => router.push("/(auth)/login") },
+        ]
+      );
+      return;
+    }
+
+    if (!id) return;
+
+    try {
+      await toggleFavorite(id, isFavorite);
+    } catch (error) {
+      console.error("Failed to toggle favorite:", error);
+    }
+  };
 
   // Compute personalized warnings based on user allergies
   const getPersonalizedWarnings = (): string[] => {
@@ -103,18 +135,36 @@ export default function ProductDetailScreen() {
           <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
         </TouchableOpacity>
         <AppText variant="h3">Product Details</AppText>
-        <TouchableOpacity
-          onPress={() => {
-            Alert.alert("Share", "Share functionality coming soon");
-          }}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
-          <Ionicons
-            name="share-outline"
-            size={24}
-            color={colors.text.primary}
-          />
-        </TouchableOpacity>
+        <View style={styles.headerRight}>
+          <TouchableOpacity
+            onPress={handleToggleFavorite}
+            disabled={isTogglingFavorite}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            style={styles.headerButton}
+          >
+            {isTogglingFavorite ? (
+              <ActivityIndicator size="small" color={colors.error} />
+            ) : (
+              <Ionicons
+                name={isFavorite ? "heart" : "heart-outline"}
+                size={24}
+                color={isFavorite ? colors.error : colors.text.primary}
+              />
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => {
+              Alert.alert("Share", "Share functionality coming soon");
+            }}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Ionicons
+              name="share-outline"
+              size={24}
+              color={colors.text.primary}
+            />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Content */}
@@ -200,6 +250,15 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
+  },
+  headerRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 16,
+  },
+  headerButton: {
+    minWidth: 24,
+    alignItems: "center",
   },
   scrollView: {
     flex: 1,
