@@ -103,6 +103,13 @@ class OpenFoodFactsClient:
                  health_score = float(data["nutriscore_score"])
              except (ValueError, TypeError):
                  pass
+        
+        # Parse Nutri-Score grade (A, B, C, D, E)
+        nutriscore_grade = None
+        if data.get("nutriscore_grade"):
+            grade = str(data["nutriscore_grade"]).upper().strip()
+            if grade in ["A", "B", "C", "D", "E"]:
+                nutriscore_grade = grade
 
         return Product(
             barcode=barcode,
@@ -117,6 +124,7 @@ class OpenFoodFactsClient:
             allergens=allergens if allergens else None,
             images=images if images else None,
             health_score=health_score,
+            nutriscore_grade=nutriscore_grade,
             source="openfoodfacts"
         )
 

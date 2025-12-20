@@ -1,8 +1,26 @@
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { Session, User } from '@supabase/supabase-js';
-import { supabase } from '../../../shared/lib/supabase';
-import { signIn, signUp, signOut as signOutApi, getSession, refreshSession } from '../api/auth-api';
-import { AuthContextValue, AuthState, SignInCredentials, SignUpCredentials } from '../model/types';
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useCallback,
+} from "react";
+import { Session, User } from "@supabase/supabase-js";
+import { supabase } from "../../../shared/lib/supabase";
+import {
+  signIn,
+  signUp,
+  signOut as signOutApi,
+  getSession,
+  refreshSession,
+} from "../api/auth-api";
+import {
+  AuthContextValue,
+  AuthState,
+  SignInCredentials,
+  SignUpCredentials,
+} from "../model/types";
+import { migrateLocalScansToAccount } from "../../history/lib/migrate-guest-scans";
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
@@ -30,7 +48,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           });
         }
       } catch (error) {
-        console.error('Error initializing auth:', error);
+        console.error("Error initializing auth:", error);
         if (mounted) {
           setState({
             user: null,
@@ -74,6 +92,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         loading: false,
         initialized: true,
       });
+
+      // Migrate guest scans in background (don't block login)
+      migrateLocalScansToAccount()
+        .then((result) => {
+          if (result.success && result.migratedCount > 0) {
+            console.log(`Migrated ${result.migratedCount} guest scans`);
+          }
+        })
+        .catch(console.error);
     } catch (error) {
       setState((prev) => ({ ...prev, loading: false }));
       throw error;
@@ -90,6 +117,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         loading: false,
         initialized: true,
       });
+
+      // Migrate guest scans if session was created (user is logged in)
+      if (result.session) {
+        migrateLocalScansToAccount()
+          .then((migrationResult) => {
+            if (migrationResult.success && migrationResult.migratedCount > 0) {
+              console.log(
+                `Migrated ${migrationResult.migratedCount} guest scans`
+              );
+            }
+          })
+          .catch(console.error);
+      }
+
+      return result;
     } catch (error) {
       setState((prev) => ({ ...prev, loading: false }));
       throw error;
@@ -121,7 +163,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         user: session?.user ?? null,
       }));
     } catch (error) {
-      console.error('Error refreshing session:', error);
+      console.error("Error refreshing session:", error);
       throw error;
     }
   }, []);
@@ -140,8 +182,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 }
-

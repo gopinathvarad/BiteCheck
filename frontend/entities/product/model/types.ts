@@ -17,6 +17,7 @@ export interface Product {
   warnings?: string[];
   images?: string[];
   health_score?: number;
+  nutriscore_grade?: "A" | "B" | "C" | "D" | "E";
   source?: string;
   created_at?: string;
   updated_at?: string;

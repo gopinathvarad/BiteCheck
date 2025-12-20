@@ -26,11 +26,29 @@ import {
   colors,
   layout,
 } from "../../shared/ui";
+import { useUserPreferences } from "../../features/user";
 
 export default function ProductDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { data, isLoading, error, refetch } = useProduct(id);
+  const { allergies: userAllergies } = useUserPreferences();
+
+  // Compute personalized warnings based on user allergies
+  const getPersonalizedWarnings = (): string[] => {
+    const product = data?.data;
+    if (!product?.allergens || !userAllergies?.length) return [];
+
+    return product.allergens.filter((allergen) =>
+      userAllergies.some(
+        (userAllergen) =>
+          allergen.toLowerCase().includes(userAllergen.toLowerCase()) ||
+          userAllergen.toLowerCase().includes(allergen.toLowerCase())
+      )
+    );
+  };
+
+  const personalizedWarnings = getPersonalizedWarnings();
 
   if (isLoading) {
     return (
@@ -108,8 +126,11 @@ export default function ProductDetailScreen() {
         <ProductDetailHeader product={product} />
 
         <View style={styles.contentPadding}>
-          {product.health_score !== undefined && (
-            <HealthScoreIndicator score={product.health_score} />
+          {(product.health_score !== undefined || product.nutriscore_grade) && (
+            <HealthScoreIndicator
+              score={product.health_score}
+              grade={product.nutriscore_grade}
+            />
           )}
 
           <NutritionFactsSection
@@ -119,10 +140,13 @@ export default function ProductDetailScreen() {
 
           <AllergensSection
             allergens={product.allergens}
-            warnings={product.warnings}
+            warnings={personalizedWarnings}
           />
 
-          <IngredientsSection product={product} />
+          <IngredientsSection
+            product={product}
+            warnings={personalizedWarnings}
+          />
 
           <ProductInfoSection product={product} />
 

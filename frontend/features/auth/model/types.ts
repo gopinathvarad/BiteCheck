@@ -1,4 +1,4 @@
-import { Session, User } from '@supabase/supabase-js';
+import { Session, User } from "@supabase/supabase-js";
 
 export interface AuthUser extends User {}
 
@@ -24,8 +24,9 @@ export interface AuthState {
 
 export interface AuthContextValue extends AuthState {
   signIn: (credentials: SignInCredentials) => Promise<void>;
-  signUp: (credentials: SignUpCredentials) => Promise<void>;
+  signUp: (
+    credentials: SignUpCredentials
+  ) => Promise<{ user: AuthUser | null; session: AuthSession | null }>;
   signOut: () => Promise<void>;
   refreshSession: () => Promise<void>;
 }
-

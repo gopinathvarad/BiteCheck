@@ -41,6 +41,7 @@ class Product(BaseModel):
     warnings: Optional[List[str]] = None
     images: Optional[List[str]] = None
     health_score: Optional[float] = None
+    nutriscore_grade: Optional[str] = None  # A, B, C, D, or E
     source: Optional[str] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None

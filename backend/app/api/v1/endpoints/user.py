@@ -1,14 +1,51 @@
 """User endpoints"""
 
-from fastapi import APIRouter, HTTPException, Depends, status
-from typing import Dict, Any
+from fastapi import APIRouter, HTTPException, Depends, status, Query
+from typing import Dict, Any, List, Optional
+from pydantic import BaseModel
+from datetime import datetime
 from app.features.user.models import UserPreferencesRequest, UserProfile
 from app.features.user.service import UserService
 from app.core.auth import get_current_user
+from app.core.database import get_supabase_client
 from app.shared.models.response import APIResponse
 
 router = APIRouter()
 
+
+# ============== Models for History Endpoints ==============
+
+class ScanHistoryItem(BaseModel):
+    id: str
+    barcode: str
+    product: Optional[Dict[str, Any]] = None
+    scannedAt: str
+    isLocal: bool = False
+
+
+class ScanHistoryData(BaseModel):
+    scans: List[ScanHistoryItem]
+    page: int
+    total_pages: int
+    total_count: int
+
+
+class MigrateScanItem(BaseModel):
+    barcode: str
+    product_id: Optional[str] = None
+    result_snapshot: Dict[str, Any]
+    scanned_at: str
+
+
+class MigrateScansRequest(BaseModel):
+    scans: List[MigrateScanItem]
+
+
+class MigrateScansData(BaseModel):
+    migrated_count: int
+
+
+# ============== Existing Endpoints ==============
 
 @router.get("/me", response_model=APIResponse[UserProfile])
 async def get_current_user_profile(
@@ -95,3 +132,115 @@ async def update_preferences(
             detail=f"Error updating preferences: {str(e)}"
         )
 
+
+# ============== History Endpoints ==============
+
+@router.get("/history", response_model=APIResponse[ScanHistoryData])
+async def get_scan_history(
+    page: int = Query(1, ge=1, description="Page number"),
+    limit: int = Query(20, ge=1, le=100, description="Items per page"),
+    current_user: Dict[str, Any] = Depends(get_current_user)
+):
+    """
+    Get paginated scan history for the authenticated user
+    
+    Returns scans from the database, ordered by most recent first.
+    """
+    user_id = current_user["id"]
+    supabase = get_supabase_client()
+    
+    try:
+        # Calculate offset
+        offset = (page - 1) * limit
+        
+        # Get total count
+        count_response = supabase.table("scans").select("id", count="exact").eq("user_id", user_id).execute()
+        total_count = count_response.count or 0
+        
+        # Get paginated scans
+        response = (
+            supabase.table("scans")
+            .select("id, barcode, product_id, result_snapshot, scanned_at")
+            .eq("user_id", user_id)
+            .order("scanned_at", desc=True)
+            .range(offset, offset + limit - 1)
+            .execute()
+        )
+        
+        # Transform to response format
+        scans = []
+        for scan in response.data or []:
+            scans.append(ScanHistoryItem(
+                id=scan["id"],
+                barcode=scan["barcode"],
+                product=scan.get("result_snapshot"),
+                scannedAt=scan["scanned_at"],
+                isLocal=False
+            ))
+        
+        total_pages = max(1, (total_count + limit - 1) // limit)
+        
+        return APIResponse(
+            success=True,
+            data=ScanHistoryData(
+                scans=scans,
+                page=page,
+                total_pages=total_pages,
+                total_count=total_count
+            ),
+            message="Scan history retrieved successfully"
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error fetching scan history: {str(e)}"
+        )
+
+
+@router.post("/history/migrate", response_model=APIResponse[MigrateScansData])
+async def migrate_guest_scans(
+    request: MigrateScansRequest,
+    current_user: Dict[str, Any] = Depends(get_current_user)
+):
+    """
+    Migrate guest scans from local storage to the user's account
+    
+    Bulk inserts scans with the authenticated user's ID.
+    """
+    user_id = current_user["id"]
+    supabase = get_supabase_client()
+    
+    if not request.scans:
+        return APIResponse(
+            success=True,
+            data=MigrateScansData(migrated_count=0),
+            message="No scans to migrate"
+        )
+    
+    try:
+        # Prepare records for insertion
+        records = []
+        for scan in request.scans:
+            records.append({
+                "user_id": user_id,
+                "barcode": scan.barcode,
+                "product_id": scan.product_id,
+                "result_snapshot": scan.result_snapshot,
+                "scanned_at": scan.scanned_at
+            })
+        
+        # Bulk insert scans
+        response = supabase.table("scans").insert(records).execute()
+        
+        migrated_count = len(response.data) if response.data else 0
+        
+        return APIResponse(
+            success=True,
+            data=MigrateScansData(migrated_count=migrated_count),
+            message=f"Successfully migrated {migrated_count} scans"
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error migrating scans: {str(e)}"
+        )

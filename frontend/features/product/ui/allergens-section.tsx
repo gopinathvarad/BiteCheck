@@ -33,7 +33,7 @@ export function AllergensSection({
           <View style={styles.warningTextContainer}>
             <Text style={styles.warningTitle}>⚠️ Allergen Warning</Text>
             <Text style={styles.warningMessage}>
-              This product contains allergens you're allergic to
+              Contains: {warnings.join(", ")} — avoid
             </Text>
           </View>
         </View>

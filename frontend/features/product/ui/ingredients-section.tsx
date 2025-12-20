@@ -5,9 +5,21 @@ import { colors, layout, typography, textVariants } from "../../../shared/ui";
 
 interface IngredientsSectionProps {
   product: Product;
+  warnings?: string[];
 }
 
-export function IngredientsSection({ product }: IngredientsSectionProps) {
+export function IngredientsSection({
+  product,
+  warnings,
+}: IngredientsSectionProps) {
+  // Check if an ingredient contains any allergen from warnings
+  const containsAllergen = (ingredient: string): boolean => {
+    if (!warnings || warnings.length === 0) return false;
+    const ingredientLower = ingredient.toLowerCase();
+    return warnings.some((allergen) =>
+      ingredientLower.includes(allergen.toLowerCase())
+    );
+  };
   // Parse ingredients if not already parsed
   const getIngredients = () => {
     let ingList: string[] = [];
@@ -49,12 +61,33 @@ export function IngredientsSection({ product }: IngredientsSectionProps) {
     <View style={styles.container}>
       <Text style={styles.sectionTitle}>Ingredients</Text>
       <View style={styles.listContainer}>
-        {ingredients.map((ingredient, index) => (
-          <View key={index} style={styles.listItem}>
-            <View style={styles.bulletPoint} />
-            <Text style={styles.listItemText}>{ingredient}</Text>
-          </View>
-        ))}
+        {ingredients.map((ingredient, index) => {
+          const isAllergenMatch = containsAllergen(ingredient);
+          return (
+            <View
+              key={index}
+              style={[
+                styles.listItem,
+                isAllergenMatch && styles.listItemHighlight,
+              ]}
+            >
+              <View
+                style={[
+                  styles.bulletPoint,
+                  isAllergenMatch && styles.bulletPointHighlight,
+                ]}
+              />
+              <Text
+                style={[
+                  styles.listItemText,
+                  isAllergenMatch && styles.listItemTextHighlight,
+                ]}
+              >
+                {ingredient}
+              </Text>
+            </View>
+          );
+        })}
       </View>
     </View>
   );
@@ -92,12 +125,29 @@ const styles = StyleSheet.create({
     marginRight: 12,
     opacity: 0.7,
   },
+  listItemHighlight: {
+    backgroundColor: "#fee2e2",
+    borderRadius: 6,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    marginLeft: -8,
+    borderWidth: 1,
+    borderColor: "#fecaca",
+  },
+  bulletPointHighlight: {
+    backgroundColor: "#dc2626",
+    opacity: 1,
+  },
   listItemText: {
     flex: 1,
     fontSize: 15,
     lineHeight: 22,
     color: colors.text.primary,
     fontWeight: "400",
+  },
+  listItemTextHighlight: {
+    color: "#dc2626",
+    fontWeight: "600",
   },
   noDataText: {
     fontSize: 15,

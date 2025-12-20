@@ -13,12 +13,14 @@ import {
 import { StatusBar } from "expo-status-bar";
 import { useCameraPermissions, BarcodeScanningResult } from "expo-camera";
 import { Ionicons } from "@expo/vector-icons";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { scanProduct } from "../../features/scan/api/scan-api";
 import { Product } from "../../entities/product/model/types";
 import { ScanCameraView } from "../../features/scan/ui/scan-camera-view";
 import { ManualBarcodeEntry } from "../../features/scan/ui/manual-barcode-entry";
+import { saveLocalScan } from "../../features/history/lib/local-scan-storage";
+import { useAuth } from "../../features/auth/lib/auth-context";
 import {
   AppText,
   AppButton,
@@ -37,6 +39,8 @@ export default function ScanScreen() {
   const [showManualEntryModal, setShowManualEntryModal] = useState(false);
   const [product, setProduct] = useState<Product | null>(null);
   const router = useRouter();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
 
   // Scan mutation
   const scanMutation = useMutation({
@@ -47,10 +51,21 @@ export default function ScanScreen() {
       });
       return response.data;
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       setProduct(data);
       setShowProductModal(true);
       setScanned(false); // Reset for next scan
+
+      // Save to local storage for guest users
+      if (!user) {
+        try {
+          await saveLocalScan(data);
+          // Invalidate history query so it refreshes
+          queryClient.invalidateQueries({ queryKey: ["scan-history"] });
+        } catch (error) {
+          console.error("Failed to save local scan:", error);
+        }
+      }
     },
     onError: (error: any) => {
       // Safely convert error message to string
