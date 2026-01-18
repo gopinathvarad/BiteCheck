@@ -79,8 +79,8 @@ Phase 1 (Completed)          Phase 2 (New)
 │  └─────────────┘  └──────┬──────┘  └─────────────┘  └─────────────┘    │
 │                          │                                              │
 │  ┌───────────────────────┴───────────────────────┐                     │
-│  │              OFFLINE STORAGE LAYER             │                     │
-│  │   SQLite + AsyncStorage + Sync Queue          │                     │
+│  │           OFFLINE QUEUE (AsyncStorage)         │                     │
+│  │   Temporary queue only - syncs to Supabase     │                     │
 │  └───────────────────────┬───────────────────────┘                     │
 └──────────────────────────┼──────────────────────────────────────────────┘
                            │
@@ -451,26 +451,53 @@ Seamless operation without internet connectivity:
 **When Offline:**
 
 - Indicator appears in header
-- Food entries saved locally
-- Photos stored in device cache
-- Operations queued for sync
+- Food entries temporarily queued in AsyncStorage
+- Operations held for sync to Supabase
 
 **When Back Online:**
 
-- Automatic sync triggered
+- Automatic sync to Supabase triggered
 - Queue processed in order
 - Conflicts resolved (server wins by default)
+- Local queue cleared after successful sync
 - User notified of sync status
 
-**Local Storage Structure:**
+**Storage Architecture:**
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                     PRIMARY STORAGE (Supabase)                          │
+│  All data permanently stored here - single source of truth             │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐         │
+│  │  food_entries   │  │  saved_meals    │  │ nutrient_targets│   ...   │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘         │
+└─────────────────────────────────────────────────────────────────────────┘
+                           ▲
+                           │ Sync when online
+                           │
+┌─────────────────────────────────────────────────────────────────────────┐
+│                  OFFLINE QUEUE ONLY (AsyncStorage)                      │
+│  • Temporary holding for pending operations                             │
+│  • Cleared after successful sync to Supabase                            │
+│  • NOT a database — just a queue                                        │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+**Queue Structure (AsyncStorage):**
 
 ```typescript
-// AsyncStorage Keys
-@bitecheck:queue              // Pending operations
-@bitecheck:local_entries      // Locally created entries
-@bitecheck:cached_photos      // Photo cache
+// AsyncStorage Keys (temporary queue only)
+@bitecheck:pending_queue      // Operations waiting to sync to Supabase
 @bitecheck:last_sync          // Last successful sync timestamp
-@bitecheck:user_data          // Cached user preferences
+
+// Example queue entry
+interface PendingOperation {
+  id: string;
+  type: 'create' | 'update' | 'delete';
+  table: 'food_entries' | 'saved_meals';
+  payload: any;
+  createdAt: Date;
+}
 ```
 
 **Offline Indicator UI:**
@@ -867,14 +894,14 @@ EXPO_PUBLIC_USERJOT_ID=your_userjot_id
 
 ## 🛠 Tech Stack Additions
 
-| Category          | Phase 1  | Phase 2 Additions                        |
-| ----------------- | -------- | ---------------------------------------- |
-| **AI/ML**         | -        | Gemini 2.5 Flash Light, Perplexity Sonar |
-| **Analytics**     | -        | PostHog                                  |
-| **Storage**       | Supabase | + SQLite (offline), AsyncStorage         |
-| **Notifications** | -        | Expo Push Notifications                  |
-| **Feedback**      | -        | User Jot                                 |
-| **Animations**    | -        | Lottie                                   |
+| Category          | Phase 1  | Phase 2 Additions                                 |
+| ----------------- | -------- | ------------------------------------------------- |
+| **AI/ML**         | -        | Gemini 2.5 Flash Light, Perplexity Sonar          |
+| **Analytics**     | -        | PostHog                                           |
+| **Storage**       | Supabase | Supabase (primary) + AsyncStorage (offline queue) |
+| **Notifications** | -        | Expo Push Notifications                           |
+| **Feedback**      | -        | User Jot                                          |
+| **Animations**    | -        | Lottie                                            |
 
 ### New Dependencies
 
@@ -892,11 +919,13 @@ apscheduler>=3.10.0         # Reminder scheduling
 ```json
 {
   "posthog-react-native": "^3.0.0",
-  "expo-sqlite": "~13.0.0",
+  "@react-native-async-storage/async-storage": "1.21.0",
   "lottie-react-native": "6.7.0",
   "expo-notifications": "~0.27.0"
 }
 ```
+
+> **Note:** AsyncStorage is already included with Expo. No SQLite needed — all data is stored in Supabase, AsyncStorage is only used as a temporary queue when offline.
 
 ---
 
